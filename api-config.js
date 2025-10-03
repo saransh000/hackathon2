@@ -19,6 +19,15 @@ const API_CONFIG = {
         HISTORY: '/analysis/history',
         FEEDBACK: '/analysis/:id/feedback',
         
+        // Appointment endpoints
+        BOOK_APPOINTMENT: '/appointments/book',
+        MY_APPOINTMENTS: '/appointments/my-appointments',
+        ALL_APPOINTMENTS: '/appointments/all',
+        APPOINTMENT_BY_ID: '/appointments/:id',
+        CANCEL_APPOINTMENT: '/appointments/:id/cancel',
+        UPDATE_APPOINTMENT_STATUS: '/appointments/:id/status',
+        AVAILABLE_SLOTS: '/appointments/available-slots',
+        
         // Admin endpoints
         ADMIN_OVERVIEW: '/admin/overview',
         

@@ -168,10 +168,14 @@ function setupEventListeners() {
         }, 1500);
     });
 
+    // Appointment button
+    document.getElementById('appointmentBtn').addEventListener('click', function() {
+        openAppointmentModal();
+    });
+
     // Pharmacy button
     document.getElementById('pharmacyBtn').addEventListener('click', function() {
-        // Redirect to pharmacy finder page
-        window.location.href = 'pharmacy-finder.html';
+        openPharmacyFinder();
     });
 
     // View details buttons
@@ -566,3 +570,727 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// ==================== APPOINTMENT BOOKING SYSTEM ====================
+
+let selectedTimeSlot = null;
+let selectedDate = null;
+
+// Open appointment modal
+function openAppointmentModal() {
+    const modal = document.getElementById('appointmentModal');
+    modal.style.display = 'flex';
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('appointmentDate').setAttribute('min', today);
+    
+    // Load user's appointments
+    loadUserAppointments();
+}
+
+// Close appointment modal
+document.getElementById('closeAppointmentModal')?.addEventListener('click', function() {
+    document.getElementById('appointmentModal').style.display = 'none';
+    document.getElementById('appointmentForm').reset();
+    selectedTimeSlot = null;
+    selectedDate = null;
+});
+
+// Handle consultation type selection
+document.querySelectorAll('.radio-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            document.querySelectorAll('.radio-card').forEach(c => {
+                c.style.borderColor = '#e0e0e0';
+                c.style.background = 'white';
+            });
+            this.style.borderColor = '#667eea';
+            this.style.background = 'rgba(102, 126, 234, 0.1)';
+        }
+    });
+});
+
+// Handle date change
+document.getElementById('appointmentDate')?.addEventListener('change', async function(e) {
+    selectedDate = e.target.value;
+    const doctor = document.getElementById('doctorSelect').value.split('|')[0];
+    
+    if (!doctor) {
+        showNotification('Please select a doctor first', 'info');
+        return;
+    }
+    
+    await loadAvailableTimeSlots(selectedDate, doctor);
+});
+
+// Load available time slots
+async function loadAvailableTimeSlots(date, doctor) {
+    try {
+        const response = await makeAPICall(
+            `${API_CONFIG.ENDPOINTS.AVAILABLE_SLOTS}?date=${date}&doctor=${encodeURIComponent(doctor)}`,
+            { method: 'GET' }
+        );
+        
+        const data = await response.json();
+        const timeSlotsContainer = document.getElementById('timeSlots');
+        const selectedTimeDisplay = document.getElementById('selectedTimeDisplay');
+        timeSlotsContainer.innerHTML = '';
+        
+        if (data.success && data.availableSlots.length > 0) {
+            data.availableSlots.forEach(slot => {
+                const slotBtn = document.createElement('button');
+                slotBtn.type = 'button';
+                slotBtn.className = 'time-slot';
+                slotBtn.textContent = slot;
+                slotBtn.addEventListener('click', function() {
+                    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTimeSlot = slot;
+                    
+                    // Update the selected time display
+                    if (selectedTimeDisplay) {
+                        selectedTimeDisplay.innerHTML = `<i class="fas fa-check-circle" style="color: #4caf50; margin-right: 6px;"></i> <strong>${slot}</strong>`;
+                        selectedTimeDisplay.style.color = '#2c3e50';
+                        selectedTimeDisplay.style.background = '#e8f5e9';
+                        selectedTimeDisplay.style.borderColor = '#4caf50';
+                    }
+                });
+                timeSlotsContainer.appendChild(slotBtn);
+            });
+        } else {
+            timeSlotsContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #e74c3c; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0;"><i class="fas fa-exclamation-circle"></i> No available slots for this date</p>';
+        }
+        
+    } catch (error) {
+        console.error('Error loading time slots:', error);
+        showNotification('Failed to load available time slots', 'error');
+    }
+}
+
+// Handle appointment form submission
+document.getElementById('appointmentForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const doctorValue = document.getElementById('doctorSelect').value;
+    if (!doctorValue) {
+        showNotification('Please select a doctor', 'error');
+        return;
+    }
+    
+    if (!selectedDate) {
+        showNotification('Please select a date', 'error');
+        return;
+    }
+    
+    if (!selectedTimeSlot) {
+        showNotification('Please select a time slot', 'error');
+        return;
+    }
+    
+    const [doctorName, doctorSpecialty] = doctorValue.split('|');
+    const consultationType = document.querySelector('input[name="consultationType"]:checked').value;
+    const symptoms = document.getElementById('appointmentSymptoms').value;
+    const additionalNotes = document.getElementById('appointmentNotes').value;
+    
+    const appointmentData = {
+        doctorName: doctorName.trim(),
+        doctorSpecialty: doctorSpecialty.trim(),
+        appointmentDate: selectedDate,
+        appointmentTime: selectedTimeSlot,
+        consultationType,
+        symptoms,
+        additionalNotes
+    };
+    
+    const btn = document.getElementById('bookAppointmentBtn');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+    
+    try {
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.BOOK_APPOINTMENT, {
+            method: 'POST',
+            body: JSON.stringify(appointmentData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Appointment booked successfully! Awaiting confirmation.', 'success');
+            document.getElementById('appointmentForm').reset();
+            selectedTimeSlot = null;
+            selectedDate = null;
+            loadUserAppointments();
+        } else {
+            showNotification(data.message || 'Failed to book appointment', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Booking error:', error);
+        showNotification('Failed to book appointment. Please try again.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+});
+
+// Load user's appointments
+async function loadUserAppointments() {
+    try {
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.MY_APPOINTMENTS, {
+            method: 'GET'
+        });
+        
+        const data = await response.json();
+        const appointmentsList = document.getElementById('appointmentsList');
+        
+        if (data.success && data.appointments.all.length > 0) {
+            appointmentsList.innerHTML = '';
+            
+            // Show upcoming appointments first
+            if (data.appointments.upcoming.length > 0) {
+                const upcomingSection = document.createElement('div');
+                upcomingSection.innerHTML = '<h4 style="margin: 0 0 10px 0; color: #667eea;">Upcoming</h4>';
+                data.appointments.upcoming.forEach(apt => {
+                    upcomingSection.appendChild(createAppointmentCard(apt));
+                });
+                appointmentsList.appendChild(upcomingSection);
+            }
+            
+            // Show past appointments
+            if (data.appointments.past.length > 0) {
+                const pastSection = document.createElement('div');
+                pastSection.style.marginTop = '20px';
+                pastSection.innerHTML = '<h4 style="margin: 0 0 10px 0; color: #999;">Past</h4>';
+                data.appointments.past.slice(0, 3).forEach(apt => {
+                    pastSection.appendChild(createAppointmentCard(apt));
+                });
+                appointmentsList.appendChild(pastSection);
+            }
+            
+        } else {
+            appointmentsList.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #999;">
+                    <i class="fas fa-calendar" style="font-size: 48px; opacity: 0.3; margin-bottom: 10px; display: block;"></i>
+                    <p>No appointments yet. Book your first appointment!</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error loading appointments:', error);
+        document.getElementById('appointmentsList').innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: #f44336;">
+                <p>Failed to load appointments</p>
+            </div>
+        `;
+    }
+}
+
+// Create appointment card
+function createAppointmentCard(appointment) {
+    const card = document.createElement('div');
+    card.className = 'appointment-card';
+    
+    const date = new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    const statusClass = appointment.status.toLowerCase();
+    const statusText = appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1);
+    
+    card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+            <h4 style="margin: 0; color: #333; font-size: 15px;">${appointment.doctorName}</h4>
+            <span class="appointment-status ${statusClass}">${statusText}</span>
+        </div>
+        <p style="margin: 5px 0; color: #666; font-size: 13px;">
+            <i class="fas fa-stethoscope"></i> ${appointment.doctorSpecialty}
+        </p>
+        <p style="margin: 5px 0; color: #666; font-size: 13px;">
+            <i class="fas fa-calendar"></i> ${date} at ${appointment.appointmentTime}
+        </p>
+        <p style="margin: 5px 0; color: #666; font-size: 13px;">
+            <i class="fas fa-${appointment.consultationType === 'video' ? 'video' : appointment.consultationType === 'phone' ? 'phone' : 'hospital'}"></i> 
+            ${appointment.consultationType.charAt(0).toUpperCase() + appointment.consultationType.slice(1)} Consultation
+        </p>
+        ${appointment.status === 'pending' ? `
+            <button onclick="cancelAppointment('${appointment._id}')" 
+                    style="margin-top: 10px; padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        ` : ''}
+    `;
+    
+    return card;
+}
+
+// Cancel appointment
+async function cancelAppointment(appointmentId) {
+    if (!confirm('Are you sure you want to cancel this appointment?')) {
+        return;
+    }
+    
+    try {
+        const response = await makeAPICall(
+            API_CONFIG.ENDPOINTS.CANCEL_APPOINTMENT.replace(':id', appointmentId),
+            { method: 'PATCH' }
+        );
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Appointment cancelled successfully', 'success');
+            loadUserAppointments();
+        } else {
+            showNotification(data.message || 'Failed to cancel appointment', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Cancel error:', error);
+        showNotification('Failed to cancel appointment', 'error');
+    }
+}
+
+// Make cancelAppointment available globally
+window.cancelAppointment = cancelAppointment;
+
+// ==================== OPENSTREETMAP PHARMACY FINDER ====================
+
+let pharmacyMap = null;
+let userLocation = null;
+let pharmacyMarkers = [];
+let userMarker = null;
+
+// Open Pharmacy Finder Modal
+function openPharmacyFinder() {
+    const modal = document.getElementById('pharmacyModal');
+    modal.style.display = 'flex';
+    
+    // Initialize map if not already initialized
+    if (!pharmacyMap && window.L) {
+        setTimeout(() => initPharmacyMap(), 100);
+    } else if (!window.L) {
+        showNotification('Map is loading... Please wait and try again.', 'info');
+        setTimeout(() => {
+            if (window.L) {
+                initPharmacyMap();
+            }
+        }, 1000);
+    }
+}
+
+// Close Pharmacy Finder Modal
+document.getElementById('closePharmacyModal')?.addEventListener('click', function() {
+    document.getElementById('pharmacyModal').style.display = 'none';
+});
+
+// Initialize the pharmacy map with OpenStreetMap
+function initPharmacyMap() {
+    try {
+        const mapDiv = document.getElementById('pharmacyMap');
+        if (!mapDiv) return;
+
+        // Clear any existing map
+        mapDiv.innerHTML = '';
+
+        // Default location (New York City)
+        const defaultLocation = [40.7128, -74.0060];
+
+        // Create map with OpenStreetMap
+        pharmacyMap = L.map('pharmacyMap').setView(defaultLocation, 13);
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(pharmacyMap);
+
+        // Try to get user's location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = [position.coords.latitude, position.coords.longitude];
+                    
+                    pharmacyMap.setView(userLocation, 14);
+                    
+                    // Add marker for user location (blue circle)
+                    userMarker = L.circleMarker(userLocation, {
+                        radius: 10,
+                        fillColor: '#4285F4',
+                        color: '#ffffff',
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 1
+                    }).addTo(pharmacyMap);
+                    
+                    userMarker.bindPopup('<b>📍 Your Location</b>').openPopup();
+
+                    showNotification('Location detected! Searching for nearby pharmacies...', 'success');
+                    
+                    // Automatically search for nearby pharmacies
+                    setTimeout(() => {
+                        autoSearchPharmacies();
+                    }, 500);
+                },
+                () => {
+                    showNotification('Location access denied. Using default location.', 'info');
+                    // Still search for pharmacies using default location
+                    setTimeout(() => {
+                        autoSearchPharmacies();
+                    }, 500);
+                }
+            );
+        } else {
+            // No geolocation support, use default location
+            setTimeout(() => {
+                autoSearchPharmacies();
+            }, 500);
+        }
+
+    } catch (error) {
+        console.error('Map initialization error:', error);
+        showNotification('Failed to initialize map. Please refresh and try again.', 'error');
+    }
+}
+
+// Automatic pharmacy search using Overpass API (OpenStreetMap)
+async function autoSearchPharmacies() {
+    console.log('autoSearchPharmacies called');
+    console.log('pharmacyMap exists:', !!pharmacyMap);
+    console.log('userLocation:', userLocation);
+    
+    if (!pharmacyMap) {
+        console.log('Map not ready for auto-search');
+        return;
+    }
+
+    const location = userLocation || [40.7128, -74.0060];
+    const radius = 10000; // Increased to 10km radius for better results
+
+    console.log('Starting pharmacy search with location:', location, 'radius:', radius);
+    await searchPharmacies(location, radius);
+}
+
+// Search for pharmacies using Overpass API
+async function searchPharmacies(location, radius) {
+    try {
+        console.log('Searching for pharmacies at:', location, 'within', radius, 'meters');
+        
+        // Expanded Overpass API query for pharmacies and medical stores
+        const query = `
+            [out:json][timeout:25];
+            (
+                node["amenity"="pharmacy"](around:${radius},${location[0]},${location[1]});
+                way["amenity"="pharmacy"](around:${radius},${location[0]},${location[1]});
+                node["shop"="chemist"](around:${radius},${location[0]},${location[1]});
+                way["shop"="chemist"](around:${radius},${location[0]},${location[1]});
+                node["shop"="pharmacy"](around:${radius},${location[0]},${location[1]});
+                way["shop"="pharmacy"](around:${radius},${location[0]},${location[1]});
+                node["healthcare"="pharmacy"](around:${radius},${location[0]},${location[1]});
+                way["healthcare"="pharmacy"](around:${radius},${location[0]},${location[1]});
+                node["name"~"pharmacy|chemist|medical|drug",i](around:${radius},${location[0]},${location[1]});
+                way["name"~"pharmacy|chemist|medical|drug",i](around:${radius},${location[0]},${location[1]});
+            );
+            out center;
+        `;
+
+        console.log('Overpass query:', query);
+
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: query
+        });
+
+        console.log('Overpass response status:', response.status);
+
+        const data = await response.json();
+        console.log('Overpass data received:', data);
+        
+        if (data.elements && data.elements.length > 0) {
+            console.log('Found', data.elements.length, 'pharmacies');
+            displayPharmacies(data.elements);
+            showNotification(`Found ${data.elements.length} nearby pharmacies!`, 'success');
+        } else {
+            console.log('No pharmacies found in OpenStreetMap');
+            
+            // Show helpful message with sample data
+            const pharmacyList = document.getElementById('pharmacyList');
+            if (pharmacyList) {
+                pharmacyList.innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <i class="fas fa-info-circle" style="font-size: 48px; color: #ff9800; margin-bottom: 15px;"></i>
+                        <h3 style="margin: 10px 0; color: #333;">No Pharmacies Found in OpenStreetMap</h3>
+                        <p style="color: #666; margin: 10px 0;">This could mean:</p>
+                        <ul style="text-align: left; color: #666; max-width: 400px; margin: 15px auto;">
+                            <li>Your local pharmacies aren't in OpenStreetMap database yet</li>
+                            <li>Try increasing the search radius to 10-20km</li>
+                            <li>The pharmacy might be listed under a different name</li>
+                        </ul>
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <p style="margin: 5px 0; color: #333;"><strong>💡 Tip:</strong> You can add your local pharmacy to OpenStreetMap!</p>
+                            <a href="https://www.openstreetmap.org" target="_blank" 
+                               style="display: inline-block; margin-top: 10px; padding: 8px 15px; background: #4285F4; color: white; text-decoration: none; border-radius: 4px;">
+                                Visit OpenStreetMap
+                            </a>
+                        </div>
+                        <button onclick="showSamplePharmacies()" 
+                                style="margin-top: 15px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                            📍 Show Sample Pharmacies (Demo)
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('pharmacyCount').textContent = '0 pharmacies found';
+            showNotification('No pharmacies found. OpenStreetMap may not have data for your area.', 'info');
+        }
+
+    } catch (error) {
+        console.error('Pharmacy search error:', error);
+        showNotification('Failed to search for pharmacies. Please try again.', 'error');
+    }
+}
+
+// Find Nearby Pharmacies button handler
+document.getElementById('findNearbyBtn')?.addEventListener('click', async function() {
+    if (!pharmacyMap) {
+        showNotification('Map not ready. Please wait...', 'error');
+        return;
+    }
+
+    const btn = this;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+    btn.disabled = true;
+
+    try {
+        const location = userLocation || [40.7128, -74.0060];
+        const radius = parseInt(document.getElementById('radiusSelect').value);
+
+        await searchPharmacies(location, radius);
+
+    } catch (error) {
+        showNotification('Search failed. Please try again.', 'error');
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+});
+
+// Search Pharmacies by Name
+document.getElementById('searchPharmacyBtn')?.addEventListener('click', async function() {
+    if (!pharmacyMap) {
+        showNotification('Map not ready. Please wait...', 'error');
+        return;
+    }
+
+    const searchQuery = document.getElementById('pharmacySearch').value.trim();
+    if (!searchQuery) {
+        showNotification('Please enter a pharmacy name to search.', 'error');
+        return;
+    }
+
+    const btn = this;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+    btn.disabled = true;
+
+    try {
+        const location = userLocation || [40.7128, -74.0060];
+        const radius = parseInt(document.getElementById('radiusSelect').value);
+
+        // Search and filter by name
+        const query = `
+            [out:json];
+            (
+                node["amenity"="pharmacy"]["name"~"${searchQuery}",i](around:${radius},${location[0]},${location[1]});
+                way["amenity"="pharmacy"]["name"~"${searchQuery}",i](around:${radius},${location[0]},${location[1]});
+            );
+            out center;
+        `;
+
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: query
+        });
+
+        const data = await response.json();
+        
+        if (data.elements && data.elements.length > 0) {
+            displayPharmacies(data.elements);
+            showNotification(`Found ${data.elements.length} results for "${searchQuery}"`, 'success');
+        } else {
+            showNotification('No results found. Try a different search term.', 'info');
+        }
+
+    } catch (error) {
+        showNotification('Search failed. Please try again.', 'error');
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+});
+
+// Display pharmacies on map and list
+function displayPharmacies(pharmacies) {
+    // Clear existing markers
+    pharmacyMarkers.forEach(marker => pharmacyMap.removeLayer(marker));
+    pharmacyMarkers = [];
+
+    // Clear list
+    const pharmacyList = document.getElementById('pharmacyList');
+    pharmacyList.innerHTML = '';
+
+    // Update count
+    document.getElementById('pharmacyCount').textContent = `${pharmacies.length} pharmacies found`;
+
+    // Create bounds to fit all markers
+    const bounds = L.latLngBounds();
+    if (userLocation) {
+        bounds.extend(userLocation);
+    }
+
+    pharmacies.forEach((pharmacy) => {
+        const lat = pharmacy.lat || pharmacy.center.lat;
+        const lon = pharmacy.lon || pharmacy.center.lon;
+        const name = pharmacy.tags?.name || 'Unnamed Pharmacy';
+        const address = pharmacy.tags?.['addr:street'] || pharmacy.tags?.['addr:full'] || 'Address not available';
+        const phone = pharmacy.tags?.phone || 'N/A';
+        const openingHours = pharmacy.tags?.opening_hours || 'Hours not available';
+
+        // Add marker to map
+        const marker = L.marker([lat, lon], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        }).addTo(pharmacyMap);
+
+        bounds.extend([lat, lon]);
+
+        // Create popup content
+        const popupContent = `
+            <div style="max-width: 250px; font-family: Arial;">
+                <h3 style="margin: 0 0 10px 0; font-size: 16px;">${name}</h3>
+                <p style="margin: 5px 0; font-size: 13px;"><strong>📍 Address:</strong> ${address}</p>
+                <p style="margin: 5px 0; font-size: 13px;"><strong>📞 Phone:</strong> ${phone}</p>
+                <p style="margin: 5px 0; font-size: 13px;"><strong>🕒 Hours:</strong> ${openingHours}</p>
+                <button onclick="getDirections(${lat}, ${lon})" 
+                        style="margin-top: 10px; background: #4285F4; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%;">
+                    🚗 Get Directions
+                </button>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        pharmacyMarkers.push(marker);
+
+        // Add to list
+        const listItem = document.createElement('div');
+        listItem.style.cssText = 'padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;';
+        listItem.innerHTML = `
+            <h4 style="margin: 0 0 5px 0; color: #333; font-size: 16px;">${name}</h4>
+            <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">📍 ${address}</p>
+            <p style="margin: 0; font-size: 12px; color: #888;">📞 ${phone}</p>
+        `;
+
+        listItem.addEventListener('mouseenter', () => {
+            listItem.style.backgroundColor = '#f0f8ff';
+        });
+
+        listItem.addEventListener('mouseleave', () => {
+            listItem.style.backgroundColor = 'white';
+        });
+
+        listItem.addEventListener('click', () => {
+            pharmacyMap.setView([lat, lon], 16);
+            marker.openPopup();
+        });
+
+        pharmacyList.appendChild(listItem);
+    });
+
+    // Fit map to show all markers
+    if (pharmacies.length > 0 && bounds.isValid()) {
+        pharmacyMap.fitBounds(bounds, { padding: [50, 50] });
+    }
+}
+
+// Get directions to pharmacy
+function getDirections(lat, lon) {
+    if (!userLocation) {
+        // Open Google Maps in new tab
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, '_blank');
+    } else {
+        // Open Google Maps with directions from user location
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=${userLocation[0]},${userLocation[1]}&destination=${lat},${lon}`, '_blank');
+    }
+}
+
+// Search on Enter key
+document.getElementById('pharmacySearch')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('searchPharmacyBtn').click();
+    }
+});
+
+// Close modal on background click
+document.getElementById('pharmacyModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// Show sample pharmacies for demo purposes
+function showSamplePharmacies() {
+    const location = userLocation || [40.7128, -74.0060];
+    
+    // Create sample pharmacy data around user's location
+    const samplePharmacies = [
+        {
+            lat: location[0] + 0.01,
+            lon: location[1] + 0.01,
+            tags: {
+                name: "Sample Pharmacy 1",
+                "addr:street": "123 Main Street",
+                phone: "+1-555-0101",
+                opening_hours: "Mon-Fri 9:00-18:00"
+            }
+        },
+        {
+            lat: location[0] - 0.01,
+            lon: location[1] + 0.01,
+            tags: {
+                name: "Sample Pharmacy 2",
+                "addr:street": "456 Oak Avenue",
+                phone: "+1-555-0102",
+                opening_hours: "Mon-Sun 8:00-20:00"
+            }
+        },
+        {
+            lat: location[0] + 0.01,
+            lon: location[1] - 0.01,
+            tags: {
+                name: "Sample Pharmacy 3",
+                "addr:street": "789 Pine Road",
+                phone: "+1-555-0103",
+                opening_hours: "Mon-Sat 10:00-19:00"
+            }
+        }
+    ];
+    
+    displayPharmacies(samplePharmacies);
+    showNotification('Showing 3 sample pharmacies for demonstration', 'info');
+}
+
+console.log('Pharmacy finder module loaded successfully (OpenStreetMap)');
