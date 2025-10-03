@@ -135,14 +135,20 @@ function setupEventListeners() {
         }, 1000);
     });
 
-    // Clear button
-    document.getElementById('clearBtn').addEventListener('click', function() {
-        document.getElementById('symptomsInput').value = '';
-        document.getElementById('resultsSection').style.display = 'none';
-    });
+    // Clear button (only if it exists - for old textarea interface)
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            document.getElementById('symptomsInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+        });
+    }
 
-    // Analyze button
-    document.getElementById('analyzeBtn').addEventListener('click', analyzeSymptoms);
+    // Analyze button (only if it exists - for old textarea interface)
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', analyzeSymptoms);
+    }
 
     // Emergency button
     document.getElementById('emergencyBtn').addEventListener('click', function() {
@@ -175,12 +181,15 @@ function setupEventListeners() {
         });
     });
 
-    // Enter key to submit
-    document.getElementById('symptomsInput').addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.key === 'Enter') {
-            analyzeSymptoms();
-        }
-    });
+    // Enter key to submit (only if symptomsInput exists - for old textarea interface)
+    const symptomsInput = document.getElementById('symptomsInput');
+    if (symptomsInput) {
+        symptomsInput.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                analyzeSymptoms();
+            }
+        });
+    }
 }
 
 // Main Analysis Function
@@ -284,7 +293,7 @@ function getRecommendations(severity, conditions) {
                 title: '🚨 SEEK IMMEDIATE MEDICAL ATTENTION',
                 type: 'emergency',
                 actions: [
-                    'Call 911 or go to the nearest emergency room immediately',
+                    'Call 108 or go to the nearest emergency room immediately',
                     'Do not drive yourself - call an ambulance',
                     'If possible, have someone stay with you',
                     'Bring a list of current medications'
