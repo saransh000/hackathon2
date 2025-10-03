@@ -374,12 +374,6 @@ function getFinalAnalysis() {
 
 // Initialize chat system when document loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Check session first
-    if (!checkSession()) {
-        return;
-    }
-    
-    initializeDashboard();
-    setupEventListeners();
-    initializeChatSystem(); // Initialize chat system
+    // Initialize the chat system after dashboard is ready
+    initializeChatSystem();
 });
