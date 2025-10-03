@@ -1,6 +1,9 @@
 // API Configuration
+// Automatically detect if we're in production or development
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:5000/api',
+    BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000/api'
+        : 'https://curemind-backend.onrender.com/api', // Update with your actual Render backend URL
     ENDPOINTS: {
         // Auth endpoints
         LOGIN: '/auth/login',
