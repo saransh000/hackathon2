@@ -14,7 +14,6 @@ const authRoutes = require('./src/routes/auth');
 const userRoutes = require('./src/routes/users');
 const analysisRoutes = require('./src/routes/analysis');
 const adminRoutes = require('./src/routes/admin');
-const appointmentRoutes = require('./src/routes/appointments');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,7 +68,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/appointments', appointmentRoutes);
 
 // Catch all for undefined routes
 app.use('*', (req, res) => {

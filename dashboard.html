@@ -68,28 +68,12 @@
                         <textarea 
                             id="chatInput" 
                             class="chat-input" 
-                            placeholder="Type or speak your symptoms..."
+                            placeholder="Type your symptoms here..."
                             rows="2"
                         ></textarea>
-                        <div class="input-buttons">
-                            <button class="voice-btn" id="voiceBtn" title="Voice input">
-                                <i class="fas fa-microphone"></i>
-                            </button>
-                            <button class="send-btn" id="sendBtn" title="Send message">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Voice Input Status -->
-                    <div class="voice-status" id="voiceStatus" style="display: none;">
-                        <div class="voice-status-content">
-                            <div class="pulse-animation"></div>
-                            <span class="status-text">Listening...</span>
-                            <button class="stop-voice-btn" id="stopVoiceBtn">
-                                <i class="fas fa-stop"></i> Stop
-                            </button>
-                        </div>
+                        <button class="send-btn" id="sendBtn" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
                     </div>
                 </div>
                 
@@ -97,7 +81,7 @@
                     <button class="clear-chat-btn" id="clearChatBtn">
                         <i class="fas fa-redo"></i> Start New Chat
                     </button>
-                <button class="get-diagnosis-btn" id="getDiagnosisBtn" style="display: none;">
+                    <button class="get-diagnosis-btn" id="getDiagnosisBtn" style="display: none;">
                         <i class="fas fa-stethoscope"></i> Get Final Analysis
                     </button>
                 </div>
@@ -113,11 +97,6 @@
             <button class="doctor-btn" id="doctorBtn">
                 <i class="fas fa-user-md"></i>
                 <span>Connect with a Doctor</span>
-                
-            </button>
-            <button class="appointment-btn" id="appointmentBtn">
-                <i class="fas fa-calendar-check"></i>
-                <span>Book Appointment</span>
             </button>
             <button class="pharmacy-btn" id="pharmacyBtn">
                 <i class="fas fa-pills"></i>
@@ -275,156 +254,10 @@
         </div>
     </div>
 
-    <!-- Appointment Booking Modal -->
-    <div class="modal" id="appointmentModal" style="display: none;">
-        <div class="modal-content appointment-modal" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 25px 30px; border-radius: 16px 16px 0 0; margin: -30px -30px 0 -30px; position: relative;">
-                <h2 style="margin: 0; font-size: 26px; font-weight: 700; display: flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-calendar-check"></i> Book Your Appointment
-                </h2>
-                <span class="close-modal" id="closeAppointmentModal" style="font-size: 32px; cursor: pointer; position: absolute; right: 25px; top: 50%; transform: translateY(-50%); color: white; opacity: 0.9; transition: opacity 0.3s; line-height: 1;">&times;</span>
-            </div>
-            
-            <div class="modal-body" style="padding: 30px;">
-                <form id="appointmentForm">
-                    <!-- Doctor Selection -->
-                    <div class="form-section" style="margin-bottom: 25px;">
-                        <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                            <i class="fas fa-user-md" style="color: #667eea; width: 20px;"></i> 
-                            Select Your Doctor
-                        </label>
-                        <select id="doctorSelect" required class="form-control" style="width: 100%; padding: 14px 16px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 15px; background: white; cursor: pointer; transition: all 0.3s; color: #2c3e50;">
-                            <option value="">Choose a doctor...</option>
-                            <option value="Dr. Sarah Johnson|General Practitioner">👨‍⚕️ Dr. Sarah Johnson - General Practitioner</option>
-                            <option value="Dr. Michael Chen|Cardiologist">❤️ Dr. Michael Chen - Cardiologist</option>
-                            <option value="Dr. Emily Davis|Pediatrician">👶 Dr. Emily Davis - Pediatrician</option>
-                            <option value="Dr. Robert Williams|Dermatologist">✨ Dr. Robert Williams - Dermatologist</option>
-                            <option value="Dr. Lisa Anderson|Psychiatrist">🧠 Dr. Lisa Anderson - Psychiatrist</option>
-                        </select>
-                    </div>
-
-                    <!-- Consultation Type -->
-                    <div class="form-section" style="margin-bottom: 25px;">
-                        <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                            <i class="fas fa-video" style="color: #667eea; width: 20px;"></i> 
-                            Choose Consultation Type
-                        </label>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                            <label class="radio-card" style="border: 2px solid #e1e8ed; padding: 18px 12px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s; background: #fafbfc; position: relative;">
-                                <input type="radio" name="consultationType" value="video" checked style="display: none;">
-                                <i class="fas fa-video" style="font-size: 28px; color: #667eea; display: block; margin-bottom: 8px;"></i>
-                                <span style="font-size: 13px; font-weight: 600; color: #2c3e50; display: block;">Video Call</span>
-                                <span style="font-size: 11px; color: #7f8c8d; display: block; margin-top: 4px;">Online</span>
-                            </label>
-                            <label class="radio-card" style="border: 2px solid #e1e8ed; padding: 18px 12px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s; background: #fafbfc; position: relative;">
-                                <input type="radio" name="consultationType" value="in-person" style="display: none;">
-                                <i class="fas fa-hospital" style="font-size: 28px; color: #4caf50; display: block; margin-bottom: 8px;"></i>
-                                <span style="font-size: 13px; font-weight: 600; color: #2c3e50; display: block;">In-Person</span>
-                                <span style="font-size: 11px; color: #7f8c8d; display: block; margin-top: 4px;">At Clinic</span>
-                            </label>
-                            <label class="radio-card" style="border: 2px solid #e1e8ed; padding: 18px 12px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s; background: #fafbfc; position: relative;">
-                                <input type="radio" name="consultationType" value="phone" style="display: none;">
-                                <i class="fas fa-phone" style="font-size: 28px; color: #ff9800; display: block; margin-bottom: 8px;"></i>
-                                <span style="font-size: 13px; font-weight: 600; color: #2c3e50; display: block;">Phone Call</span>
-                                <span style="font-size: 11px; color: #7f8c8d; display: block; margin-top: 4px;">Voice Only</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Date & Time Row -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-                        <!-- Date Selection -->
-                        <div class="form-section">
-                            <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                                <i class="fas fa-calendar" style="color: #667eea; width: 20px;"></i> 
-                                Date
-                            </label>
-                            <input type="date" id="appointmentDate" required class="form-control"
-                                   style="width: 100%; padding: 14px 16px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 15px; cursor: pointer; transition: all 0.3s; color: #2c3e50;">
-                        </div>
-
-                        <!-- Time Preview (shows after date selection) -->
-                        <div class="form-section">
-                            <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                                <i class="fas fa-clock" style="color: #667eea; width: 20px;"></i> 
-                                Selected Time
-                            </label>
-                            <div id="selectedTimeDisplay" style="width: 100%; padding: 14px 16px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 15px; background: #f8f9fa; color: #7f8c8d; display: flex; align-items: center; justify-content: center; min-height: 51px;">
-                                <i class="fas fa-info-circle" style="margin-right: 6px;"></i> No time selected
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Time Slot Selection -->
-                    <div class="form-section" style="margin-bottom: 25px;">
-                        <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                            <i class="fas fa-clock" style="color: #667eea; width: 20px;"></i> 
-                            Available Time Slots
-                        </label>
-                        <div id="timeSlots" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.03), rgba(118, 75, 162, 0.03)); border-radius: 10px; border: 2px dashed #e1e8ed;">
-                            <p style="grid-column: 1 / -1; text-align: center; color: #7f8c8d; font-size: 14px; margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i class="fas fa-arrow-up"></i> Please select a date and doctor first
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Symptoms -->
-                    <div class="form-section" style="margin-bottom: 25px;">
-                        <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                            <i class="fas fa-notes-medical" style="color: #667eea; width: 20px;"></i> 
-                            Symptoms / Reason for Visit <span style="color: #e74c3c; margin-left: 4px;">*</span>
-                        </label>
-                        <textarea id="appointmentSymptoms" required rows="3" placeholder="Please describe your symptoms, concerns, or reason for consultation in detail..."
-                                  class="form-control" style="width: 100%; padding: 14px 16px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 15px; font-family: inherit; resize: vertical; transition: all 0.3s; color: #2c3e50;"></textarea>
-                        <small style="display: block; margin-top: 6px; color: #7f8c8d; font-size: 12px;">
-                            <i class="fas fa-info-circle"></i> This helps the doctor prepare for your consultation
-                        </small>
-                    </div>
-
-                    <!-- Additional Notes -->
-                    <div class="form-section" style="margin-bottom: 25px;">
-                        <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 15px;">
-                            <i class="fas fa-comment-medical" style="color: #667eea; width: 20px;"></i> 
-                            Additional Notes <span style="color: #95a5a6; font-weight: 400; font-size: 13px;">(Optional)</span>
-                        </label>
-                        <textarea id="appointmentNotes" rows="2" placeholder="Any additional information, allergies, medications, or special requirements..."
-                                  class="form-control" style="width: 100%; padding: 14px 16px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 15px; font-family: inherit; resize: vertical; transition: all 0.3s; color: #2c3e50;"></textarea>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <button type="submit" id="bookAppointmentBtn" 
-                            style="width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px;">
-                        <i class="fas fa-calendar-check" style="font-size: 18px;"></i> 
-                        <span>Confirm Appointment Booking</span>
-                    </button>
-                    
-                    <p style="text-align: center; margin-top: 12px; color: #7f8c8d; font-size: 12px;">
-                        <i class="fas fa-shield-alt"></i> Your appointment will be confirmed within 24 hours
-                    </p>
-                </form>
-
-                <!-- My Appointments Section -->
-                <div id="myAppointments" style="margin-top: 35px; padding-top: 35px; border-top: 3px solid #f0f3f7;">
-                    <h3 style="margin: 0 0 18px 0; color: #2c3e50; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-list-alt" style="color: #667eea;"></i> 
-                        My Appointments
-                    </h3>
-                    <div id="appointmentsList" style="max-height: 400px; overflow-y: auto;">
-                        <div style="text-align: center; padding: 40px 20px; color: #999;">
-                            <i class="fas fa-calendar" style="font-size: 48px; opacity: 0.3; margin-bottom: 10px; display: block;"></i>
-                            <p>Loading appointments...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Leaflet JavaScript for OpenStreetMap -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script src="api-config.js"></script>
-    <script src="voice-input.js"></script>
     <script src="dashboard.js"></script>
     <script src="dashboard-chat.js"></script>
 </body>
