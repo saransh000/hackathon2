@@ -142,12 +142,15 @@ function setupEventListeners() {
         });
     });
 
-    // Enter key to submit
-    document.getElementById('symptomsInput').addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.key === 'Enter') {
-            analyzeSymptoms();
-        }
-    });
+    // Enter key to submit (only if symptomsInput exists - for old textarea interface)
+    const symptomsInput = document.getElementById('symptomsInput');
+    if (symptomsInput) {
+        symptomsInput.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                analyzeSymptoms();
+            }
+        });
+    }
 }
 
 // Main Analysis Function
