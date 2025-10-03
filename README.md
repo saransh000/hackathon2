@@ -29,13 +29,16 @@ CureMind is a modern healthcare platform that provides:
 
 ### Admin Access
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: `CureMind2025Admin!Secure`
 - **Access**: Full admin dashboard with analytics, AI monitoring, content management, and user management
 
 ### Regular User Access
-- **Username**: Any username (e.g., `user`, `john`, `sara@gmail.com`)
-- **Password**: Any password
-- **Access**: User dashboard with AI symptom analysis and health triage
+Regular Users:
+Username: john_doe
+Password: password123
+
+Username: jane_smith
+Password: password123
 
 ## 🚀 Getting Started
 
