@@ -3,7 +3,7 @@
 const API_CONFIG = {
     BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:5000/api'
-        : 'https://curemind-backend.onrender.com/api', // Update with your actual Render backend URL
+        : 'https://hackathon2-8fkm.onrender.com/api', // Your deployed backend URL
     ENDPOINTS: {
         // Auth endpoints
         LOGIN: '/auth/login',
