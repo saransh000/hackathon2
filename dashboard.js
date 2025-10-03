@@ -180,10 +180,7 @@ function setupEventListeners() {
 
     // Doctor button
     document.getElementById('doctorBtn').addEventListener('click', function() {
-        showNotification('Connecting you with nearby healthcare providers...', 'info');
-        setTimeout(() => {
-            showNotification('Feature coming soon! You will be able to book appointments.', 'info');
-        }, 1500);
+        showDoctorModal();
     });
 
     // Appointment button
@@ -1312,6 +1309,188 @@ function showSamplePharmacies() {
 }
 
 console.log('Pharmacy finder module loaded successfully (OpenStreetMap)');
+
+// Doctor Modal Function
+function showDoctorModal() {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'doctorModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: rgba(30, 27, 62, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 550px;
+            width: 90%;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        ">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <i class="fas fa-user-md" style="font-size: 64px; color: #8b5cf6; margin-bottom: 15px;"></i>
+                <h2 style="color: white; margin-bottom: 10px; font-size: 28px;">Connect with a Doctor</h2>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 16px;">Choose your preferred consultation method</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
+                <button onclick="startVideoCall()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+                    border: none;
+                    border-radius: 15px;
+                    color: white;
+                    font-size: 18px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 10px 30px rgba(139, 92, 246, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <i class="fas fa-video"></i>
+                    Video Call
+                </button>
+
+                <button onclick="startVoiceCall()" style="
+                    padding: 20px;
+                    background: rgba(139, 92, 246, 0.2);
+                    border: 2px solid rgba(139, 92, 246, 0.4);
+                    border-radius: 15px;
+                    color: white;
+                    font-size: 18px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(139, 92, 246, 0.3)'; this.style.transform='translateY(-3px)';" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'; this.style.transform='translateY(0)';">
+                    <i class="fas fa-phone"></i>
+                    Voice Call
+                </button>
+
+                <button onclick="startMessageChat()" style="
+                    padding: 20px;
+                    background: rgba(139, 92, 246, 0.2);
+                    border: 2px solid rgba(139, 92, 246, 0.4);
+                    border-radius: 15px;
+                    color: white;
+                    font-size: 18px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(139, 92, 246, 0.3)'; this.style.transform='translateY(-3px)';" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'; this.style.transform='translateY(0)';">
+                    <i class="fas fa-comments"></i>
+                    Message
+                </button>
+
+                <button onclick="bookAppointment()" style="
+                    padding: 20px;
+                    background: rgba(139, 92, 246, 0.2);
+                    border: 2px solid rgba(139, 92, 246, 0.4);
+                    border-radius: 15px;
+                    color: white;
+                    font-size: 18px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(139, 92, 246, 0.3)'; this.style.transform='translateY(-3px)';" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'; this.style.transform='translateY(0)';">
+                    <i class="fas fa-calendar-check"></i>
+                    Book Appointment
+                </button>
+            </div>
+
+            <button onclick="closeDoctorModal()" style="
+                width: 100%;
+                padding: 15px;
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            " onmouseover="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='rgba(255, 255, 255, 0.7)';">
+                Cancel
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function closeDoctorModal() {
+    const modal = document.getElementById('doctorModal');
+    if (modal) {
+        modal.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+function startVideoCall() {
+    closeDoctorModal();
+    showNotification('Starting video call...', 'info');
+    setTimeout(() => {
+        window.location.href = 'video-call.html';
+    }, 500);
+}
+
+function startVoiceCall() {
+    closeDoctorModal();
+    showNotification('Starting voice call...', 'info');
+    setTimeout(() => {
+        window.location.href = 'video-call.html?audioOnly=true';
+    }, 500);
+}
+
+function startMessageChat() {
+    closeDoctorModal();
+    showNotification('Opening message chat...', 'info');
+    setTimeout(() => {
+        showNotification('Message feature coming soon! For now, use the AI chat below.', 'info');
+    }, 1000);
+}
+
+function bookAppointment() {
+    closeDoctorModal();
+    showNotification('Opening appointment booking...', 'info');
+    setTimeout(() => {
+        // Check if appointment modal exists
+        const appointmentBtn = document.getElementById('appointmentBtn');
+        if (appointmentBtn) {
+            appointmentBtn.click();
+        } else {
+            showNotification('Appointment booking feature coming soon!', 'info');
+        }
+    }, 500);
+}
 
 // Profile Modal Function
 function showProfileModal() {
