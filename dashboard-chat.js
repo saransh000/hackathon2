@@ -357,6 +357,7 @@ async function getGeminiResponse(userMessage) {
         
         const data = await response.json();
         console.log('Gemini Response:', data); // Debug log
+        console.log('Candidates:', data.candidates); // Debug candidates
         
         // Check for blocked content
         if (data.candidates && data.candidates[0]?.finishReason === 'SAFETY') {
@@ -367,16 +368,26 @@ async function getGeminiResponse(userMessage) {
         // Check for various response structures
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
+            console.log('First candidate:', candidate); // Debug first candidate
+            console.log('Candidate content:', candidate.content); // Debug content
+            console.log('Candidate parts:', candidate.content?.parts); // Debug parts
             
             // Try to get text from different possible structures
             let aiText = null;
             
             if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
                 aiText = candidate.content.parts[0].text;
+                console.log('✅ Found text in standard structure:', aiText);
             } else if (candidate.text) {
                 aiText = candidate.text;
+                console.log('✅ Found text in candidate.text:', aiText);
             } else if (candidate.output) {
                 aiText = candidate.output;
+                console.log('✅ Found text in candidate.output:', aiText);
+            } else {
+                console.error('❌ Could not find text in any known structure');
+                console.error('Candidate keys:', Object.keys(candidate));
+                console.error('Full candidate:', JSON.stringify(candidate, null, 2));
             }
             
             if (aiText) {
