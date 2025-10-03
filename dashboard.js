@@ -10,9 +10,10 @@ let userData = {
 function checkSession() {
     const userRole = localStorage.getItem('userRole');
     const username = localStorage.getItem('username');
+    const authToken = getAuthToken();
     
     // If no session or user is admin, redirect to login
-    if (!userRole || !username) {
+    if (!userRole || !username || !authToken) {
         alert('Please log in to access the dashboard');
         window.location.href = 'index.html';
         return false;
@@ -27,37 +28,62 @@ function checkSession() {
     return true;
 }
 
+// Load user data from backend
+async function loadUserData() {
+    try {
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.ME);
+        if (response.success) {
+            const user = response.data.user;
+            userData = {
+                name: user.profile?.firstName && user.profile?.lastName ? 
+                      `${user.profile.firstName} ${user.profile.lastName}` : user.username,
+                firstName: user.profile?.firstName || user.username,
+                age: user.profile?.age || 'N/A',
+                gender: user.profile?.gender || 'N/A',
+                email: user.email,
+                username: user.username
+            };
+            updateUserDisplay();
+            return true;
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        // Fallback to stored data
+        const storedUserData = localStorage.getItem('userData');
+        if (storedUserData) {
+            const parsedData = JSON.parse(storedUserData);
+            userData.name = parsedData.username;
+            userData.firstName = parsedData.username;
+            updateUserDisplay();
+        }
+        return false;
+    }
+}
+
 // Initialize Dashboard
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Check session before initializing
     if (!checkSession()) {
         return;
     }
     
-    initializeDashboard();
+    await initializeDashboard();
     setupEventListeners();
 });
 
-function initializeDashboard() {
-    // Get logged in username
-    const username = localStorage.getItem('username');
+async function initializeDashboard() {
+    // Show loading state
+    const userName = document.getElementById('userName');
+    const greetingName = document.getElementById('greetingName');
     
-    // Set user name from session
-    if (username) {
-        userData.name = username;
-        userData.firstName = username.split(' ')[0] || username;
-    }
+    userName.textContent = 'Loading...';
+    greetingName.textContent = 'Loading...';
     
-    // Set user name
-    document.getElementById('userName').textContent = userData.name;
-    document.getElementById('greetingName').textContent = userData.firstName;
+    // Load user data from backend
+    await loadUserData();
     
-    // Load user data from localStorage if available
-    const savedUser = localStorage.getItem('curemindUser');
-    if (savedUser) {
-        userData = JSON.parse(savedUser);
-        updateUserDisplay();
-    }
+    // Load user history
+    await loadAnalysisHistory();
 }
 
 function updateUserDisplay() {
@@ -82,11 +108,26 @@ function setupEventListeners() {
     });
 
     // Logout button
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+    document.getElementById('logoutBtn').addEventListener('click', async function(e) {
         e.preventDefault();
-        // Clear session
+        
+        try {
+            // Call logout API
+            await makeAPICall(API_CONFIG.ENDPOINTS.LOGOUT, {
+                method: 'POST'
+            });
+        } catch (error) {
+            console.error('Logout API error:', error);
+            // Continue with local logout even if API fails
+        }
+        
+        // Clear all session data
+        clearAuthToken();
         localStorage.removeItem('userRole');
         localStorage.removeItem('username');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userData');
+        
         // Redirect to login
         showNotification('Logging out...', 'info');
         setTimeout(() => {
@@ -123,10 +164,8 @@ function setupEventListeners() {
 
     // Pharmacy button
     document.getElementById('pharmacyBtn').addEventListener('click', function() {
-        showNotification('Searching for nearby pharmacies...', 'info');
-        setTimeout(() => {
-            showNotification('Feature coming soon! You will see nearby pharmacies on a map.', 'info');
-        }, 1500);
+        // Redirect to pharmacy finder page
+        window.location.href = 'pharmacy-finder.html';
     });
 
     // View details buttons
@@ -145,7 +184,7 @@ function setupEventListeners() {
 }
 
 // Main Analysis Function
-function analyzeSymptoms() {
+async function analyzeSymptoms() {
     const symptomsText = document.getElementById('symptomsInput').value.trim();
     
     if (!symptomsText) {
@@ -156,18 +195,39 @@ function analyzeSymptoms() {
     // Show loading
     document.getElementById('loadingOverlay').classList.add('active');
     
-    // Simulate AI analysis (2-3 seconds)
-    setTimeout(() => {
-        const analysis = performAIAnalysis(symptomsText);
-        displayResults(analysis);
+    try {
+        // Call backend API for symptom analysis
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.ANALYZE, {
+            method: 'POST',
+            body: JSON.stringify({
+                symptoms: symptomsText
+            })
+        });
+        
+        if (response.success) {
+            const analysis = {
+                severity: response.data.analysis.severity,
+                conditions: response.data.analysis.conditions,
+                recommendations: response.data.analysis.recommendations,
+                sessionId: response.data.sessionId,
+                processingTime: response.data.processingTime
+            };
+            
+            displayResults(analysis);
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            
+            // Reload history to show new analysis
+            await loadAnalysisHistory();
+        }
+    } catch (error) {
+        const errorMessage = handleAPIError(error, 'Failed to analyze symptoms. Please try again.');
+        showNotification(errorMessage, 'error');
+        console.error('Analysis error:', error);
+    } finally {
         document.getElementById('loadingOverlay').classList.remove('active');
-        
-        // Save to history
-        saveToHistory(symptomsText, analysis);
-        
-        // Scroll to results
-        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
-    }, 2500);
+    }
 }
 
 // Simulate AI Analysis (This would call your actual AI API)
@@ -337,6 +397,93 @@ function saveToHistory(symptoms, analysis) {
     historyItem.querySelector('.view-details-btn').addEventListener('click', function() {
         showNotification('Loading consultation details...', 'info');
     });
+}
+
+// Load Analysis History from Backend
+async function loadAnalysisHistory() {
+    try {
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.HISTORY + '?limit=10');
+        
+        if (response.success && response.data.analyses) {
+            const historyContainer = document.getElementById('historyContainer');
+            
+            // Clear existing items except the sample ones (keep last 3 for demo)
+            const existingItems = historyContainer.querySelectorAll('.history-item');
+            if (existingItems.length > 3) {
+                // Remove items beyond the last 3
+                for (let i = 0; i < existingItems.length - 3; i++) {
+                    existingItems[i].remove();
+                }
+            }
+            
+            // Add new analyses to history
+            response.data.analyses.forEach(analysis => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const date = new Date(analysis.timestamp).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                let badgeClass = 'badge-home';
+                let badgeText = 'Home Remedy';
+                
+                if (analysis.analysis.severity === 'doctor') {
+                    badgeClass = 'badge-doctor';
+                    badgeText = 'Doctor Visit';
+                } else if (analysis.analysis.severity === 'emergency') {
+                    badgeClass = 'badge-emergency';
+                    badgeText = 'Emergency';
+                }
+                
+                historyItem.innerHTML = `
+                    <div class="history-header">
+                        <span class="history-date"><i class="fas fa-calendar"></i> ${date}</span>
+                        <span class="history-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <p class="history-symptoms">${analysis.symptoms.substring(0, 100)}${analysis.symptoms.length > 100 ? '...' : ''}</p>
+                    <button class="view-details-btn" data-analysis-id="${analysis._id}">View Details</button>
+                `;
+                
+                // Insert at the beginning (most recent first)
+                historyContainer.insertBefore(historyItem, historyContainer.firstChild);
+                
+                // Add event listener
+                historyItem.querySelector('.view-details-btn').addEventListener('click', function() {
+                    viewAnalysisDetails(analysis._id);
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error loading analysis history:', error);
+        // Fail silently for history loading
+    }
+}
+
+// View analysis details function
+async function viewAnalysisDetails(analysisId) {
+    try {
+        showNotification('Loading analysis details...', 'info');
+        const response = await makeAPICall(`/analysis/${analysisId}`);
+        
+        if (response.success) {
+            const analysis = response.data;
+            // Display the analysis results
+            displayResults({
+                severity: analysis.analysis.severity,
+                conditions: analysis.analysis.conditions,
+                recommendations: analysis.analysis.recommendations
+            });
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+    } catch (error) {
+        const errorMessage = handleAPIError(error, 'Failed to load analysis details.');
+        showNotification(errorMessage, 'error');
+    }
 }
 
 // Notification System

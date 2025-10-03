@@ -1,10 +1,11 @@
 // Session Protection - Check if admin is logged in
-function checkAdminSession() {
+async function checkAdminSession() {
     const userRole = localStorage.getItem('userRole');
     const username = localStorage.getItem('username');
+    const authToken = getAuthToken();
     
     // If no session, redirect to login
-    if (!userRole || !username) {
+    if (!userRole || !username || !authToken) {
         alert('Please log in to access the admin dashboard');
         window.location.href = 'index.html';
         return false;
@@ -17,22 +18,108 @@ function checkAdminSession() {
         return false;
     }
     
-    return true;
+    // Verify token with backend
+    try {
+        await makeAPICall(API_CONFIG.ENDPOINTS.VERIFY);
+        return true;
+    } catch (error) {
+        console.error('Token verification failed:', error);
+        alert('Session expired. Please log in again.');
+        clearAuthToken();
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return false;
+    }
 }
 
 // Initialize Dashboard
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Check admin session before initializing
-    if (!checkAdminSession()) {
+    if (!(await checkAdminSession())) {
         return;
     }
     
+    await loadAdminOverview();
     initializeCharts();
     setupNavigation();
     setupEventListeners();
     updateLastUpdatedTime();
     startRealTimeUpdates();
 });
+
+// Load Admin Overview Data from Backend
+async function loadAdminOverview() {
+    try {
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.ADMIN_OVERVIEW);
+        
+        if (response.success) {
+            const data = response.data;
+            
+            // Update metrics on the dashboard
+            updateMetrics(data);
+            
+            return data;
+        }
+    } catch (error) {
+        console.error('Error loading admin overview:', error);
+        showNotification('Failed to load dashboard data', 'error');
+        
+        // Use fallback static data
+        updateMetrics({
+            users: { total: 1250, active: 89, newThisMonth: 156 },
+            analyses: { total: 5420, thisMonth: 234, today: 15 },
+            system: { uptime: 86400, averageProcessingTime: 2150 }
+        });
+        
+        return null;
+    }
+}
+
+// Update Dashboard Metrics
+function updateMetrics(data) {
+    // Update user metrics
+    if (data.users) {
+        updateElement('totalUsers', data.users.total);
+        updateElement('activeUsers', data.users.active);
+        updateElement('newUsers', data.users.newThisMonth);
+    }
+    
+    // Update analysis metrics
+    if (data.analyses) {
+        updateElement('totalAnalyses', data.analyses.total);
+        updateElement('monthlyAnalyses', data.analyses.thisMonth);
+        updateElement('todayAnalyses', data.analyses.today);
+    }
+    
+    // Update system metrics
+    if (data.system) {
+        updateElement('avgProcessingTime', data.system.averageProcessingTime + 'ms');
+        updateElement('uptime', formatUptime(data.system.uptime));
+    }
+}
+
+// Helper function to update element text content
+function updateElement(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+// Format uptime from seconds to readable format
+function formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (days > 0) {
+        return `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    } else {
+        return `${minutes}m`;
+    }
+}
 
 // Navigation
 function setupNavigation() {
@@ -66,11 +153,26 @@ function setupNavigation() {
 // Event Listeners
 function setupEventListeners() {
     // Admin Logout button
-    document.getElementById('adminLogoutBtn').addEventListener('click', function(e) {
+    document.getElementById('adminLogoutBtn').addEventListener('click', async function(e) {
         e.preventDefault();
-        // Clear session
+        
+        try {
+            // Call logout API
+            await makeAPICall(API_CONFIG.ENDPOINTS.LOGOUT, {
+                method: 'POST'
+            });
+        } catch (error) {
+            console.error('Logout API error:', error);
+            // Continue with local logout even if API fails
+        }
+        
+        // Clear all session data
+        clearAuthToken();
         localStorage.removeItem('userRole');
         localStorage.removeItem('username');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userData');
+        
         // Redirect to login
         showNotification('Logging out...', 'info');
         setTimeout(() => {

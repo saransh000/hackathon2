@@ -1,14 +1,5 @@
-// Admin Credentials
-const ADMIN_CREDENTIALS = {
-    username: 'admin',
-    password: 'admin123'
-    // You can add more admin accounts here
-    // username2: 'admin2',
-    // password2: 'admin456'
-};
-
 // Login Form Handler
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const username = document.getElementById('username').value;
@@ -21,48 +12,56 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         return;
     }
     
-    // Simulate login process
+    // Show loading
     showNotification('Logging in...', 'info');
     
-    // Check credentials and route accordingly
-    setTimeout(() => {
-        // Check if admin credentials
-        if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-            // Admin login
-            showNotification('Admin login successful! Redirecting to Admin Dashboard...', 'success');
+    try {
+        // Make API call to login endpoint
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.LOGIN, {
+            method: 'POST',
+            body: JSON.stringify({
+                username: username.trim(),
+                password: password
+            })
+        });
+        
+        if (response.success) {
+            // Store authentication data
+            setAuthToken(response.data.token);
+            localStorage.setItem('userRole', response.data.user.role);
+            localStorage.setItem('username', response.data.user.username);
+            localStorage.setItem('userId', response.data.user.id);
             
-            // Store admin session
-            localStorage.setItem('userRole', 'admin');
-            localStorage.setItem('username', username);
-            
-            if (remember) {
-                localStorage.setItem('rememberedUser', username);
-            }
-            
-            // Redirect to admin dashboard
-            setTimeout(() => {
-                window.location.href = 'admin.html';
-                console.log('Redirecting to admin dashboard...');
-            }, 1500);
-        } else {
-            // Regular user login (any other username/password combination)
-            showNotification('Login successful! Redirecting to Dashboard...', 'success');
-            
-            // Store user session
-            localStorage.setItem('userRole', 'user');
-            localStorage.setItem('username', username);
+            // Store user data for the app
+            localStorage.setItem('userData', JSON.stringify(response.data.user));
             
             if (remember) {
                 localStorage.setItem('rememberedUser', username);
             }
             
-            // Redirect to user dashboard
+            // Success notification
+            const userRole = response.data.user.role;
+            const redirectMessage = userRole === 'admin' ? 
+                'Admin login successful! Redirecting to Admin Dashboard...' : 
+                'Login successful! Redirecting to Dashboard...';
+            
+            showNotification(redirectMessage, 'success');
+            
+            // Redirect based on user role
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
-                console.log('Redirecting to user dashboard...');
+                if (userRole === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
             }, 1500);
         }
-    }, 1000);
+        
+    } catch (error) {
+        const errorMessage = handleAPIError(error, 'Login failed. Please check your credentials.');
+        showNotification(errorMessage, 'error');
+        console.error('Login error:', error);
+    }
 });
 
 // Notification System
