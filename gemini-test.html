@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini API Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #0f0f23, #1a1a3e, #2e1065, #4a148c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 2rem;
+        }
+
+        .container {
+            background: rgba(30, 27, 62, 0.9);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #8b5cf6;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #result {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1.5rem;
+            min-height: 200px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 2px solid rgba(74, 222, 128, 0.4);
+            color: #4ade80;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+
+        .loading {
+            background: rgba(139, 92, 246, 0.2);
+            border: 2px solid rgba(139, 92, 246, 0.4);
+            color: #8b5cf6;
+        }
+
+        pre {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Gemini API Test</h1>
+        
+        <button id="testBtn" onclick="testGeminiAPI()">Test Gemini API Connection</button>
+        
+        <div id="status"></div>
+        
+        <h3 style="margin-bottom: 1rem;">Response:</h3>
+        <div id="result">Click the button to test the Gemini API...</div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyCt-ldaiPCLO1DaOM1q4JKp7UyzvBbBaUk';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+        }
+
+        async function testGeminiAPI() {
+            const testBtn = document.getElementById('testBtn');
+            const resultDiv = document.getElementById('result');
+            
+            testBtn.disabled = true;
+            showStatus('🔄 Testing Gemini API...', 'loading');
+            resultDiv.textContent = 'Connecting to Gemini API...';
+
+            try {
+                console.log('Testing with URL:', API_URL);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: "Hello! This is a test message. Please respond with 'API is working correctly!'"
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 100,
+                        }
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response OK:', response.ok);
+
+                const data = await response.json();
+                console.log('Full response:', data);
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} - ${data.error?.message || 'Unknown error'}`);
+                }
+
+                // Display full response for debugging
+                resultDiv.innerHTML = `<strong>Full API Response:</strong>\n\n<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+                // Try to extract text
+                if (data.candidates && data.candidates.length > 0) {
+                    const candidate = data.candidates[0];
+                    
+                    let aiText = null;
+                    if (candidate.content?.parts?.[0]?.text) {
+                        aiText = candidate.content.parts[0].text;
+                    } else if (candidate.text) {
+                        aiText = candidate.text;
+                    } else if (candidate.output) {
+                        aiText = candidate.output;
+                    }
+
+                    if (aiText) {
+                        showStatus('✅ API is working! Response received.', 'success');
+                        resultDiv.innerHTML = `<strong>✅ Success! AI Response:</strong>\n\n${aiText}\n\n<strong>Full JSON:</strong>\n<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } else {
+                        showStatus('⚠️ API responded but text extraction failed', 'error');
+                        resultDiv.innerHTML = `<strong>⚠️ Response structure unexpected:</strong>\n\n<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    }
+                } else {
+                    showStatus('❌ No candidates in response', 'error');
+                    resultDiv.innerHTML = `<strong>❌ Error: No candidates</strong>\n\n<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+
+            } catch (error) {
+                console.error('Test failed:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                resultDiv.innerHTML = `<strong>❌ Test Failed:</strong>\n\n${error.message}\n\n<strong>Error Details:</strong>\n${error.stack}`;
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+
+        // Check internet connection
+        window.addEventListener('DOMContentLoaded', () => {
+            const status = navigator.onLine ? 
+                '🌐 Internet: Connected' : 
+                '❌ Internet: Disconnected';
+            console.log(status);
+        });
+    </script>
+</body>
+</html>
