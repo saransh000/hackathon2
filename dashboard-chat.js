@@ -358,30 +358,53 @@ async function getGeminiResponse(userMessage) {
         const data = await response.json();
         console.log('Gemini Response:', data); // Debug log
         
-        if (data.candidates && data.candidates.length > 0 && 
-            data.candidates[0].content && 
-            data.candidates[0].content.parts && 
-            data.candidates[0].content.parts.length > 0) {
+        // Check for blocked content
+        if (data.candidates && data.candidates[0]?.finishReason === 'SAFETY') {
+            console.error('Content blocked by safety filters:', data);
+            throw new Error('Response blocked by safety filters. Please rephrase your symptoms.');
+        }
+        
+        // Check for various response structures
+        if (data.candidates && data.candidates.length > 0) {
+            const candidate = data.candidates[0];
             
-            const aiText = data.candidates[0].content.parts[0].text;
+            // Try to get text from different possible structures
+            let aiText = null;
             
-            // Track question count
-            conversationState.questionCount++;
-            
-            // Auto-show "Get Final Analysis" button after 4-5 exchanges or if AI mentions it
-            if (conversationState.questionCount >= 4 || 
-                aiText.toLowerCase().includes('get final analysis') || 
-                aiText.toLowerCase().includes('click') && aiText.toLowerCase().includes('button')) {
-                setTimeout(() => {
-                    document.getElementById('getDiagnosisBtn').style.display = 'flex';
-                }, 500);
+            if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                aiText = candidate.content.parts[0].text;
+            } else if (candidate.text) {
+                aiText = candidate.text;
+            } else if (candidate.output) {
+                aiText = candidate.output;
             }
             
-            return aiText;
-        } else {
-            console.error('Unexpected response structure:', data);
-            throw new Error('No valid response from Gemini - check console for details');
+            if (aiText) {
+                // Track question count
+                conversationState.questionCount++;
+            
+                // Auto-show "Get Final Analysis" button after 4-5 exchanges or if AI mentions it
+                if (conversationState.questionCount >= 4 || 
+                    aiText.toLowerCase().includes('get final analysis') || 
+                    aiText.toLowerCase().includes('click') && aiText.toLowerCase().includes('button')) {
+                    setTimeout(() => {
+                        document.getElementById('getDiagnosisBtn').style.display = 'flex';
+                    }, 500);
+                }
+                
+                return aiText;
+            }
         }
+        
+        // If we got here, response structure is unexpected
+        console.error('Unexpected response structure:', JSON.stringify(data, null, 2));
+        
+        // Check if there's an error message in the response
+        if (data.error) {
+            throw new Error(`Gemini API Error: ${data.error.message}`);
+        }
+        
+        throw new Error('No valid response from Gemini. Response: ' + JSON.stringify(data));
         
     } catch (error) {
         console.error('Gemini API call failed:', error);

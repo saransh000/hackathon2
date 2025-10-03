@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Input Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #0f0f23, #1a1a3e, #2e1065, #4a148c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 2rem;
+        }
+
+        .container {
+            background: rgba(30, 27, 62, 0.9);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #8b5cf6;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 2px solid rgba(74, 222, 128, 0.4);
+            color: #4ade80;
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+
+        .status.info {
+            background: rgba(139, 92, 246, 0.2);
+            border: 2px solid rgba(139, 92, 246, 0.4);
+            color: #8b5cf6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        button {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #transcript {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1.5rem;
+            min-height: 150px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .checklist {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .checklist li {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+        }
+
+        .checklist li::before {
+            content: '✓ ';
+            color: #4ade80;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .checklist li.fail::before {
+            content: '✗ ';
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voice Input Test</h1>
+        
+        <div id="systemCheck">
+            <h3 style="margin-bottom: 1rem;">System Check:</h3>
+            <ul class="checklist" id="checklistItems"></ul>
+        </div>
+
+        <div class="controls">
+            <button class="start-btn" id="startBtn">Start Voice Input</button>
+            <button class="stop-btn" id="stopBtn" disabled>Stop</button>
+        </div>
+
+        <div id="status" class="status info">Ready to test...</div>
+
+        <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Transcript:</h3>
+        <div id="transcript">Your speech will appear here...</div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px; font-size: 0.9rem;">
+            <strong>Instructions:</strong>
+            <ol style="margin-left: 1.5rem; margin-top: 0.5rem; line-height: 1.8;">
+                <li>Click "Start Voice Input"</li>
+                <li>Allow microphone permissions when prompted</li>
+                <li>Speak clearly: "Hello, this is a test"</li>
+                <li>Watch your words appear in the transcript box</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isListening = false;
+
+        // System check
+        function runSystemCheck() {
+            const checklist = document.getElementById('checklistItems');
+            const checks = [];
+
+            // Check 1: Speech Recognition API
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                checks.push({ name: 'Speech Recognition API', status: true });
+            } else {
+                checks.push({ name: 'Speech Recognition API', status: false });
+            }
+
+            // Check 2: HTTPS or localhost
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            checks.push({ name: 'Secure context (HTTPS/localhost)', status: isSecure });
+
+            // Check 3: Internet connection
+            checks.push({ name: 'Internet connection', status: navigator.onLine });
+
+            // Check 4: Browser support
+            const browser = getBrowserName();
+            const supported = browser === 'Chrome' || browser === 'Edge' || browser === 'Safari';
+            checks.push({ name: `Browser: ${browser}`, status: supported });
+
+            // Display results
+            checks.forEach(check => {
+                const li = document.createElement('li');
+                li.textContent = check.name;
+                if (!check.status) li.classList.add('fail');
+                checklist.appendChild(li);
+            });
+
+            return checks.every(check => check.status);
+        }
+
+        function getBrowserName() {
+            const ua = navigator.userAgent;
+            if (ua.includes('Edge')) return 'Edge';
+            if (ua.includes('Chrome')) return 'Chrome';
+            if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+            if (ua.includes('Firefox')) return 'Firefox';
+            return 'Unknown';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function initRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                showStatus('Speech recognition not supported in this browser', 'error');
+                return false;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                console.log('Voice recognition started');
+                isListening = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                showStatus('🎤 Listening... Speak now!', 'success');
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = 0; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript + ' ';
+                }
+                document.getElementById('transcript').textContent = transcript;
+                showStatus('✅ Speech detected! Keep speaking...', 'success');
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isListening = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+
+                let message = 'Error: ';
+                switch(event.error) {
+                    case 'no-speech':
+                        message += 'No speech detected. Try speaking louder.';
+                        break;
+                    case 'audio-capture':
+                        message += 'No microphone found. Please connect a microphone.';
+                        break;
+                    case 'not-allowed':
+                        message += 'Microphone permission denied. Please allow access.';
+                        break;
+                    case 'network':
+                        message += 'Network error. The Speech API requires internet connection.';
+                        break;
+                    default:
+                        message += event.error;
+                }
+                showStatus(message, 'error');
+            };
+
+            recognition.onend = () => {
+                console.log('Voice recognition ended');
+                isListening = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                showStatus('Voice input stopped', 'info');
+            };
+
+            return true;
+        }
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!recognition) {
+                if (!initRecognition()) return;
+            }
+
+            try {
+                recognition.start();
+                showStatus('Starting voice recognition...', 'info');
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+                showStatus('Failed to start: ' + error.message, 'error');
+            }
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            if (recognition && isListening) {
+                recognition.stop();
+            }
+        });
+
+        // Run system check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const allPassed = runSystemCheck();
+            if (!allPassed) {
+                showStatus('⚠️ Some system checks failed. Voice input may not work properly.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
