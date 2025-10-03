@@ -136,16 +136,22 @@ function setupEventListeners() {
     });
 
     // My Profile button
-    document.getElementById('myProfileBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        showProfileModal();
-    });
+    const myProfileBtn = document.getElementById('myProfileBtn');
+    if (myProfileBtn) {
+        myProfileBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showProfileModal();
+        });
+    }
 
     // Settings button
-    document.getElementById('settingsBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        showSettingsModal();
-    });
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSettingsModal();
+        });
+    }
 
     // Clear button (only if it exists - for old textarea interface)
     const clearBtn = document.getElementById('clearBtn');
