@@ -101,6 +101,16 @@ body::before {
     padding: 0 1.5rem 2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 2rem;
+    text-align: center;
+}
+
+.admin-logo-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin: 0 auto 15px;
+    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+    display: block;
 }
 
 .admin-logo {

@@ -81,6 +81,21 @@ body::before {
     filter: brightness(1.2);
 }
 
+.header-logo-image {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    margin-right: 10px;
+    filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.6));
+    vertical-align: middle;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .header-text-logo {
     font-size: 28px;
     font-weight: 700;

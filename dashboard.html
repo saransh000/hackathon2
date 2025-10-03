@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CureMind - Healthcare Triage Dashboard</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Leaflet CSS for OpenStreetMap -->
@@ -14,6 +15,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
+                <img src="assets/logo.png" alt="CureMind Logo" class="header-logo-image">
                 <div class="header-text-logo">CureMind</div>
             </div>
             <div class="user-profile">
@@ -26,8 +28,8 @@
                         <i class="fas fa-user-circle"></i>
                     </button>
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="#"><i class="fas fa-user"></i> My Profile</a>
-                        <a href="#"><i class="fas fa-cog"></i> Settings</a>
+                        <a href="#" id="myProfileBtn"><i class="fas fa-user"></i> My Profile</a>
+                        <a href="#" id="settingsBtn"><i class="fas fa-cog"></i> Settings</a>
                         <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                     </div>
                 </div>
