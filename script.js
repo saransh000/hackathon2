@@ -1,3 +1,12 @@
+// Admin Credentials
+const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'admin123'
+    // You can add more admin accounts here
+    // username2: 'admin2',
+    // password2: 'admin456'
+};
+
 // Login Form Handler
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -15,20 +24,44 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     // Simulate login process
     showNotification('Logging in...', 'info');
     
-    // Here you would typically make an API call to your backend
+    // Check credentials and route accordingly
     setTimeout(() => {
-        // Simulate successful login
-        showNotification('Login successful! Redirecting...', 'success');
-        
-        if (remember) {
-            localStorage.setItem('rememberedUser', username);
+        // Check if admin credentials
+        if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+            // Admin login
+            showNotification('Admin login successful! Redirecting to Admin Dashboard...', 'success');
+            
+            // Store admin session
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('username', username);
+            
+            if (remember) {
+                localStorage.setItem('rememberedUser', username);
+            }
+            
+            // Redirect to admin dashboard
+            setTimeout(() => {
+                window.location.href = 'admin.html';
+                console.log('Redirecting to admin dashboard...');
+            }, 1500);
+        } else {
+            // Regular user login (any other username/password combination)
+            showNotification('Login successful! Redirecting to Dashboard...', 'success');
+            
+            // Store user session
+            localStorage.setItem('userRole', 'user');
+            localStorage.setItem('username', username);
+            
+            if (remember) {
+                localStorage.setItem('rememberedUser', username);
+            }
+            
+            // Redirect to user dashboard
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+                console.log('Redirecting to user dashboard...');
+            }, 1500);
         }
-        
-        // Redirect to dashboard or home page after 1.5 seconds
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-            console.log('Redirecting to dashboard...');
-        }, 1500);
     }, 1000);
 });
 

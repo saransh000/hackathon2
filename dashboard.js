@@ -6,13 +6,48 @@ let userData = {
     gender: 'Male'
 };
 
+// Session Protection - Check if user is logged in
+function checkSession() {
+    const userRole = localStorage.getItem('userRole');
+    const username = localStorage.getItem('username');
+    
+    // If no session or user is admin, redirect to login
+    if (!userRole || !username) {
+        alert('Please log in to access the dashboard');
+        window.location.href = 'index.html';
+        return false;
+    }
+    
+    // If admin tries to access user dashboard, redirect to admin dashboard
+    if (userRole === 'admin') {
+        window.location.href = 'admin.html';
+        return false;
+    }
+    
+    return true;
+}
+
 // Initialize Dashboard
 document.addEventListener('DOMContentLoaded', function() {
+    // Check session before initializing
+    if (!checkSession()) {
+        return;
+    }
+    
     initializeDashboard();
     setupEventListeners();
 });
 
 function initializeDashboard() {
+    // Get logged in username
+    const username = localStorage.getItem('username');
+    
+    // Set user name from session
+    if (username) {
+        userData.name = username;
+        userData.firstName = username.split(' ')[0] || username;
+    }
+    
     // Set user name
     document.getElementById('userName').textContent = userData.name;
     document.getElementById('greetingName').textContent = userData.firstName;
@@ -44,6 +79,19 @@ function setupEventListeners() {
     // Close dropdown when clicking outside
     document.addEventListener('click', function() {
         dropdownMenu.classList.remove('active');
+    });
+
+    // Logout button
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        // Clear session
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('username');
+        // Redirect to login
+        showNotification('Logging out...', 'info');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
     });
 
     // Clear button

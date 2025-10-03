@@ -1,5 +1,32 @@
+// Session Protection - Check if admin is logged in
+function checkAdminSession() {
+    const userRole = localStorage.getItem('userRole');
+    const username = localStorage.getItem('username');
+    
+    // If no session, redirect to login
+    if (!userRole || !username) {
+        alert('Please log in to access the admin dashboard');
+        window.location.href = 'index.html';
+        return false;
+    }
+    
+    // If regular user tries to access admin dashboard, redirect to user dashboard
+    if (userRole !== 'admin') {
+        alert('Access denied. Admin credentials required.');
+        window.location.href = 'dashboard.html';
+        return false;
+    }
+    
+    return true;
+}
+
 // Initialize Dashboard
 document.addEventListener('DOMContentLoaded', function() {
+    // Check admin session before initializing
+    if (!checkAdminSession()) {
+        return;
+    }
+    
     initializeCharts();
     setupNavigation();
     setupEventListeners();
@@ -38,6 +65,19 @@ function setupNavigation() {
 
 // Event Listeners
 function setupEventListeners() {
+    // Admin Logout button
+    document.getElementById('adminLogoutBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        // Clear session
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('username');
+        // Redirect to login
+        showNotification('Logging out...', 'info');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
+    });
+
     // Refresh button
     document.getElementById('refreshBtn').addEventListener('click', function() {
         this.querySelector('i').style.animation = 'spin 1s linear';
