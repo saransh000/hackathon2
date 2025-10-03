@@ -50,6 +50,147 @@ LLM: "Noted. Have you experienced any other symptoms, such as nausea or bloating
 User: "Yeah, I feel really bloated."
 LLM (Summary & Handoff): "Thank you for the details. To summarize: you're experiencing pain in your upper stomach that comes in waves, along with a feeling of bloating. Please click 'Get Final Analysis' to continue."`;
 
+// System prompt for Final Analysis
+const ANALYSIS_PROMPT = `Role & Goal
+You are CureMind's Medical Analysis AI. Your purpose is to analyze the symptom information gathered during the conversation and provide a structured medical assessment. You will review the conversation history and provide:
+1. A list of 3-5 possible health conditions with probability assessments
+2. A severity level (Emergency, Doctor Visit, or Home Care)
+3. Specific, actionable recommendations
+
+You are an analytical tool, NOT a licensed medical professional. Your analysis is for informational purposes only and should never replace professional medical advice.
+
+Input
+You will receive a complete conversation history between the user and the symptom gathering assistant. This conversation contains detailed information about the user's symptoms, including location, severity, duration, triggers, and associated symptoms.
+
+Output Format
+You must provide your response in STRICT JSON format with the following structure:
+
+{
+  "severity": "emergency" | "doctor" | "home",
+  "conditions": [
+    {
+      "name": "Condition Name",
+      "probability": "High Risk" | "Moderate" | "Likely" | "Possible"
+    }
+  ],
+  "recommendations": {
+    "title": "Severity-appropriate title",
+    "type": "emergency" | "doctor-visit" | "home-remedy",
+    "actions": [
+      "Specific action item 1",
+      "Specific action item 2",
+      "Specific action item 3",
+      "Specific action item 4",
+      "Specific action item 5"
+    ]
+  }
+}
+
+Severity Guidelines
+
+🚨 EMERGENCY (severity: "emergency")
+Use when symptoms suggest immediate medical attention is needed:
+- Severe chest pain, pressure, or tightness
+- Difficulty breathing or shortness of breath
+- Sudden severe headache (worst headache of life)
+- Confusion, loss of consciousness, or altered mental state
+- Severe bleeding or trauma
+- Signs of stroke (facial drooping, arm weakness, speech difficulty)
+- Severe allergic reactions
+- High fever (>103°F/39.4°C) with confusion or stiff neck
+
+Response must include:
+- Title: "🚨 SEEK IMMEDIATE MEDICAL ATTENTION"
+- Actions: Call 911, go to ER, do not drive yourself, etc.
+
+👨‍⚕️ DOCTOR VISIT (severity: "doctor")
+Use when symptoms warrant professional evaluation but are not immediately life-threatening:
+- Persistent fever lasting more than 3 days
+- Moderate to severe pain that doesn't improve
+- Symptoms significantly affecting daily activities
+- Respiratory symptoms with concerning features (productive cough, wheezing)
+- Digestive issues lasting more than a few days
+- Unexplained weight loss or fatigue
+- Symptoms that are worsening despite home care
+
+Response must include:
+- Title: "👨‍⚕️ Schedule a Doctor Visit"
+- Actions: Schedule appointment within 24-48 hours, monitor symptoms, prepare symptom list, etc.
+
+🏠 HOME CARE (severity: "home")
+Use when symptoms appear mild and self-limiting:
+- Common cold symptoms (mild)
+- Minor headaches
+- Mild fatigue or stress
+- Minor digestive discomfort
+- Mild muscle aches
+- Minor allergies
+
+Response must include:
+- Title: "🏠 Home Care Recommendations"
+- Actions: Rest, hydration, OTC medications, monitor for changes, when to seek help, etc.
+
+Condition Probability Levels
+- "High Risk": Strong indicators present, urgent evaluation recommended
+- "Moderate": Moderate indicators present, professional evaluation advised
+- "Likely": Common presentation matching described symptoms
+- "Possible": Could be considered based on symptoms, but less likely
+
+Critical Rules & Guardrails
+
+🚫 DO NOT Diagnose: Never state definitively "You have X condition." Always use phrases like "Possible," "May indicate," "Consistent with."
+
+🚫 DO NOT Recommend Specific Medications: Do not name specific prescription drugs. For home care, you may mention general categories like "over-the-counter pain relievers" or "antihistamines" without brand names.
+
+🚫 DO NOT Provide False Reassurance: If symptoms are concerning, do not minimize them. Err on the side of caution.
+
+✅ BE CONTEXT-AWARE: Consider the full conversation. If the user mentioned severity, duration, or concerning features, factor these into your assessment.
+
+✅ PROVIDE ACTIONABLE ADVICE: Recommendations should be specific and actionable, not vague.
+
+✅ ALWAYS Include Disclaimer Context: Your recommendations should assume the disclaimer "This is not a medical diagnosis" is visible to the user.
+
+Example Analysis
+
+Conversation Summary: User reports headache on left side for 2 days, throbbing pain rated 7/10, sensitivity to light, nausea, took ibuprofen with minimal relief.
+
+Response:
+{
+  "severity": "doctor",
+  "conditions": [
+    {
+      "name": "Migraine Headache",
+      "probability": "Likely"
+    },
+    {
+      "name": "Tension Headache",
+      "probability": "Possible"
+    },
+    {
+      "name": "Cluster Headache",
+      "probability": "Possible"
+    }
+  ],
+  "recommendations": {
+    "title": "👨‍⚕️ Schedule a Doctor Visit",
+    "type": "doctor-visit",
+    "actions": [
+      "Schedule an appointment with your primary care physician within 24-48 hours",
+      "Keep a headache diary noting triggers, duration, and severity",
+      "Rest in a dark, quiet room when pain occurs",
+      "Stay hydrated and maintain regular meal times",
+      "If pain becomes severe or you experience vision changes, seek immediate care"
+    ]
+  }
+}
+
+Remember
+- You are analyzing information, not practicing medicine
+- Your output must be valid JSON that can be parsed programmatically
+- Base your assessment on the conversation details provided
+- When in doubt about severity, recommend professional evaluation
+- Be thorough but concise in your recommendations`;
+
 // Initialize chat system
 function initializeChatSystem() {
     const sendBtn = document.getElementById('sendBtn');
@@ -340,21 +481,15 @@ function resetChat() {
 }
 
 // Get final analysis based on conversation
-function getFinalAnalysis() {
+async function getFinalAnalysis() {
     // Show loading
     document.getElementById('loadingOverlay').classList.add('active');
     
-    // Combine all conversation messages into a comprehensive description
-    let comprehensiveSymptoms = '';
-    conversationState.messages.forEach(msg => {
-        if (msg.role === 'user') {
-            comprehensiveSymptoms += msg.content + '. ';
-        }
-    });
-    
-    // Simulate AI analysis (2-3 seconds)
-    setTimeout(() => {
-        const analysis = performAIAnalysis(comprehensiveSymptoms);
+    try {
+        // Get AI-powered analysis from Gemini
+        const analysis = await getGeminiAnalysis();
+        
+        // Display results
         displayResults(analysis);
         document.getElementById('loadingOverlay').classList.remove('active');
         
@@ -369,7 +504,130 @@ function getFinalAnalysis() {
         
         // Add confirmation message to chat
         addMessageToChat('ai', '✅ Your analysis is ready! Please review the results below for your personalized health recommendations.');
-    }, 2500);
+        
+    } catch (error) {
+        console.error('Analysis failed:', error);
+        document.getElementById('loadingOverlay').classList.remove('active');
+        
+        // Fallback to basic analysis if API fails
+        showNotification('Unable to get AI analysis. Showing basic assessment.', 'warning');
+        
+        let comprehensiveSymptoms = '';
+        conversationState.messages.forEach(msg => {
+            if (msg.role === 'user') {
+                comprehensiveSymptoms += msg.content + '. ';
+            }
+        });
+        
+        const fallbackAnalysis = performAIAnalysis(comprehensiveSymptoms);
+        displayResults(fallbackAnalysis);
+        
+        const mainComplaint = conversationState.messages.find(m => m.role === 'user')?.content || 'Health consultation';
+        saveToHistory(mainComplaint, fallbackAnalysis);
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Get analysis from Gemini 2.5 Flash API
+async function getGeminiAnalysis() {
+    try {
+        // Prepare conversation summary for analysis
+        let conversationSummary = "Complete Conversation History:\n\n";
+        
+        conversationState.messages.forEach((msg, index) => {
+            if (msg.role === 'user') {
+                conversationSummary += `User: ${msg.content}\n`;
+            } else if (msg.role === 'ai') {
+                conversationSummary += `Assistant: ${msg.content}\n`;
+            }
+        });
+        
+        conversationSummary += "\n\nBased on this conversation, provide a comprehensive medical analysis in the required JSON format.";
+        
+        // API call to Gemini
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${conversationState.geminiApiKey}`;
+        
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [{ text: ANALYSIS_PROMPT }]
+                    },
+                    {
+                        role: 'model',
+                        parts: [{ text: "I understand. I will analyze the conversation history and provide a structured medical assessment in strict JSON format following all the guidelines provided." }]
+                    },
+                    {
+                        role: 'user',
+                        parts: [{ text: conversationSummary }]
+                    }
+                ],
+                generationConfig: {
+                    temperature: 0.3,  // Lower temperature for more consistent JSON output
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 1000,
+                },
+                safetySettings: [
+                    {
+                        category: "HARM_CATEGORY_HARASSMENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_HATE_SPEECH",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    },
+                    {
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                    }
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Gemini API Error:', errorData);
+            throw new Error(`API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.candidates && data.candidates.length > 0) {
+            const analysisText = data.candidates[0].content.parts[0].text;
+            
+            // Extract JSON from the response (in case there's extra text)
+            let jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error('No valid JSON found in response');
+            }
+            
+            const analysisJson = JSON.parse(jsonMatch[0]);
+            
+            // Validate the structure
+            if (!analysisJson.severity || !analysisJson.conditions || !analysisJson.recommendations) {
+                throw new Error('Invalid analysis structure');
+            }
+            
+            return analysisJson;
+            
+        } else {
+            throw new Error('No analysis returned from Gemini');
+        }
+        
+    } catch (error) {
+        console.error('Gemini Analysis failed:', error);
+        throw error;
+    }
 }
 
 // Initialize chat system when document loads
