@@ -110,20 +110,21 @@ body::before {
 }
 
 .welcome-content h1 {
-    color: #f1f5f9;
+    color: #ffffff;
     font-size: 52px;
     font-weight: 800;
     margin-bottom: 20px;
-    text-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+    text-shadow: 0 0 40px rgba(139, 92, 246, 0.8), 0 2px 8px rgba(0, 0, 0, 0.5);
     letter-spacing: -1px;
 }
 
 .welcome-content p {
-    color: #cbd5e1;
+    color: #e2e8f0;
     font-size: 18px;
     line-height: 1.8;
     max-width: 500px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    font-weight: 400;
 }
 
 /* Decorative Shapes */
