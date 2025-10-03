@@ -94,14 +94,20 @@ function setupEventListeners() {
         }, 1000);
     });
 
-    // Clear button
-    document.getElementById('clearBtn').addEventListener('click', function() {
-        document.getElementById('symptomsInput').value = '';
-        document.getElementById('resultsSection').style.display = 'none';
-    });
+    // Clear button (only if it exists - for old textarea interface)
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            document.getElementById('symptomsInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+        });
+    }
 
-    // Analyze button
-    document.getElementById('analyzeBtn').addEventListener('click', analyzeSymptoms);
+    // Analyze button (only if it exists - for old textarea interface)
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', analyzeSymptoms);
+    }
 
     // Emergency button
     document.getElementById('emergencyBtn').addEventListener('click', function() {

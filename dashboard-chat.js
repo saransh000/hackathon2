@@ -356,8 +356,13 @@ async function getGeminiResponse(userMessage) {
         }
         
         const data = await response.json();
+        console.log('Gemini Response:', data); // Debug log
         
-        if (data.candidates && data.candidates.length > 0) {
+        if (data.candidates && data.candidates.length > 0 && 
+            data.candidates[0].content && 
+            data.candidates[0].content.parts && 
+            data.candidates[0].content.parts.length > 0) {
+            
             const aiText = data.candidates[0].content.parts[0].text;
             
             // Track question count
@@ -374,7 +379,8 @@ async function getGeminiResponse(userMessage) {
             
             return aiText;
         } else {
-            throw new Error('No response from Gemini');
+            console.error('Unexpected response structure:', data);
+            throw new Error('No valid response from Gemini - check console for details');
         }
         
     } catch (error) {
@@ -601,13 +607,20 @@ async function getGeminiAnalysis() {
         }
         
         const data = await response.json();
+        console.log('Gemini Analysis Response:', data); // Debug log
         
-        if (data.candidates && data.candidates.length > 0) {
+        if (data.candidates && data.candidates.length > 0 && 
+            data.candidates[0].content && 
+            data.candidates[0].content.parts && 
+            data.candidates[0].content.parts.length > 0) {
+            
             const analysisText = data.candidates[0].content.parts[0].text;
+            console.log('Analysis Text:', analysisText); // Debug log
             
             // Extract JSON from the response (in case there's extra text)
             let jsonMatch = analysisText.match(/\{[\s\S]*\}/);
             if (!jsonMatch) {
+                console.error('No JSON found in response:', analysisText);
                 throw new Error('No valid JSON found in response');
             }
             
@@ -615,13 +628,15 @@ async function getGeminiAnalysis() {
             
             // Validate the structure
             if (!analysisJson.severity || !analysisJson.conditions || !analysisJson.recommendations) {
+                console.error('Invalid structure:', analysisJson);
                 throw new Error('Invalid analysis structure');
             }
             
             return analysisJson;
             
         } else {
-            throw new Error('No analysis returned from Gemini');
+            console.error('Unexpected analysis response structure:', data);
+            throw new Error('No analysis returned from Gemini - check console for details');
         }
         
     } catch (error) {
