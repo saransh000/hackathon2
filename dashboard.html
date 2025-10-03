@@ -45,20 +45,42 @@
         <section class="symptom-input-section">
             <div class="input-container">
                 <label for="symptomsInput" class="input-label">
-                    <i class="fas fa-notes-medical"></i> Describe your symptoms here
+                    <i class="fas fa-comments"></i> Interactive Symptom Chat
                 </label>
-                <textarea 
-                    id="symptomsInput" 
-                    class="symptoms-textarea" 
-                    placeholder="Example: I have a headache, mild fever, and body aches since yesterday morning..."
-                    rows="6"
-                ></textarea>
-                <div class="input-actions">
-                    <button class="clear-btn" id="clearBtn">
-                        <i class="fas fa-eraser"></i> Clear
+                
+                <!-- Chat Interface -->
+                <div class="chat-interface" id="chatInterface">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="ai-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <p>Hello! I'm your AI Health Assistant. 👋</p>
+                                <p>To help you better, please describe your main concern. For example: "I have a bad headache" or "I'm feeling nauseous"</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <textarea 
+                            id="chatInput" 
+                            class="chat-input" 
+                            placeholder="Type your symptoms here..."
+                            rows="2"
+                        ></textarea>
+                        <button class="send-btn" id="sendBtn" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-actions">
+                    <button class="clear-chat-btn" id="clearChatBtn">
+                        <i class="fas fa-redo"></i> Start New Chat
                     </button>
-                    <button class="analyze-btn" id="analyzeBtn">
-                        <i class="fas fa-search"></i> Get Analysis
+                    <button class="get-diagnosis-btn" id="getDiagnosisBtn" style="display: none;">
+                        <i class="fas fa-stethoscope"></i> Get Final Analysis
                     </button>
                 </div>
             </div>
@@ -179,5 +201,6 @@
 
     <script src="api-config.js"></script>
     <script src="dashboard.js"></script>
+    <script src="dashboard-chat.js"></script>
 </body>
 </html>
