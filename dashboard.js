@@ -870,19 +870,41 @@ let userMarker = null;
 
 // Open Pharmacy Finder Modal
 function openPharmacyFinder() {
+    console.log('🏥 Opening pharmacy finder...');
     const modal = document.getElementById('pharmacyModal');
+    
+    if (!modal) {
+        console.error('❌ Pharmacy modal not found!');
+        showNotification('Error: Pharmacy modal not found. Please refresh the page.', 'error');
+        return;
+    }
+    
+    console.log('✅ Modal found, displaying...');
     modal.style.display = 'flex';
     
-    // Initialize map if not already initialized
-    if (!pharmacyMap && window.L) {
-        setTimeout(() => initPharmacyMap(), 100);
-    } else if (!window.L) {
-        showNotification('Map is loading... Please wait and try again.', 'info');
+    // Check if Leaflet is loaded
+    if (!window.L) {
+        console.log('⏳ Leaflet not loaded yet, waiting...');
+        showNotification('Map is loading... Please wait a moment.', 'info');
         setTimeout(() => {
             if (window.L) {
+                console.log('✅ Leaflet loaded, initializing map...');
                 initPharmacyMap();
+            } else {
+                console.error('❌ Leaflet failed to load');
+                showNotification('Map library failed to load. Please refresh the page.', 'error');
             }
-        }, 1000);
+        }, 1500);
+        return;
+    }
+    
+    // Initialize map if not already initialized
+    if (!pharmacyMap) {
+        console.log('🗺️ Initializing map for first time...');
+        setTimeout(() => initPharmacyMap(), 100);
+    } else {
+        console.log('✅ Map already initialized');
+        pharmacyMap.invalidateSize();
     }
 }
 
@@ -893,18 +915,36 @@ document.getElementById('closePharmacyModal')?.addEventListener('click', functio
 
 // Initialize the pharmacy map with OpenStreetMap
 function initPharmacyMap() {
+    console.log('🗺️ Initializing pharmacy map...');
+    
     try {
         const mapDiv = document.getElementById('pharmacyMap');
-        if (!mapDiv) return;
+        if (!mapDiv) {
+            console.error('❌ Map container not found!');
+            showNotification('Map container not found. Please refresh the page.', 'error');
+            return;
+        }
+
+        console.log('📍 Map container found:', mapDiv);
 
         // Clear any existing map
+        if (pharmacyMap) {
+            console.log('🔄 Removing old map instance...');
+            pharmacyMap.remove();
+            pharmacyMap = null;
+        }
+        
         mapDiv.innerHTML = '';
 
-        // Default location (New York City)
-        const defaultLocation = [40.7128, -74.0060];
+        // Default location (New Delhi, India - more relevant for Indian users)
+        const defaultLocation = [28.6139, 77.2090];
+
+        console.log('🌍 Creating map with default location:', defaultLocation);
 
         // Create map with OpenStreetMap
         pharmacyMap = L.map('pharmacyMap').setView(defaultLocation, 13);
+
+        console.log('✅ Map instance created');
 
         // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -912,15 +952,31 @@ function initPharmacyMap() {
             maxZoom: 19
         }).addTo(pharmacyMap);
 
+        console.log('✅ Map tiles added');
+
+        // Force map to render properly
+        setTimeout(() => {
+            pharmacyMap.invalidateSize();
+            console.log('🔄 Map size invalidated');
+        }, 100);
+
         // Try to get user's location
         if (navigator.geolocation) {
+            console.log('📍 Requesting geolocation...');
+            showNotification('Detecting your location...', 'info');
+            
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    console.log('✅ Location found:', position.coords);
                     userLocation = [position.coords.latitude, position.coords.longitude];
                     
                     pharmacyMap.setView(userLocation, 14);
                     
                     // Add marker for user location (blue circle)
+                    if (userMarker) {
+                        pharmacyMap.removeLayer(userMarker);
+                    }
+                    
                     userMarker = L.circleMarker(userLocation, {
                         radius: 10,
                         fillColor: '#4285F4',
@@ -939,9 +995,11 @@ function initPharmacyMap() {
                         autoSearchPharmacies();
                     }, 500);
                 },
-                () => {
-                    showNotification('Location access denied. Using default location.', 'info');
+                (error) => {
+                    console.warn('⚠️ Geolocation error:', error);
+                    showNotification('Location access denied. Using default location (New Delhi).', 'info');
                     // Still search for pharmacies using default location
+                    userLocation = defaultLocation;
                     setTimeout(() => {
                         autoSearchPharmacies();
                     }, 500);

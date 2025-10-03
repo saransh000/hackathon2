@@ -22,6 +22,15 @@ const API_CONFIG = {
         // Admin endpoints
         ADMIN_OVERVIEW: '/admin/overview',
         
+        // Appointment endpoints
+        BOOK_APPOINTMENT: '/appointments/book',
+        MY_APPOINTMENTS: '/appointments/my-appointments',
+        ALL_APPOINTMENTS: '/appointments/all',
+        APPOINTMENT_BY_ID: '/appointments/:id',
+        CANCEL_APPOINTMENT: '/appointments/:id/cancel',
+        UPDATE_APPOINTMENT_STATUS: '/appointments/:id/status',
+        AVAILABLE_SLOTS: '/appointments/available-slots',
+        
         // Health check
         HEALTH: '/health'
     }

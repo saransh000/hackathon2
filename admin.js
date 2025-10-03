@@ -567,4 +567,431 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// ============================================
+// APPOINTMENT MANAGEMENT FUNCTIONS
+// ============================================
+
+let currentAppointmentId = null;
+let allAppointmentsData = [];
+
+// Load all appointments
+async function loadAllAppointments() {
+    const loader = document.getElementById('appointmentsLoader');
+    const grid = document.getElementById('appointmentsGrid');
+    const noAppointments = document.getElementById('noAppointments');
+    
+    try {
+        loader.style.display = 'flex';
+        grid.innerHTML = '';
+        noAppointments.style.display = 'none';
+        
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.ALL_APPOINTMENTS, {
+            method: 'GET'
+        });
+        
+        allAppointmentsData = response.appointments || [];
+        
+        // Update stats
+        updateAppointmentStats(response.stats);
+        
+        // Display appointments
+        if (allAppointmentsData.length === 0) {
+            noAppointments.style.display = 'block';
+        } else {
+            allAppointmentsData.forEach(appointment => {
+                grid.appendChild(createAppointmentCard(appointment));
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error loading appointments:', error);
+        showNotification('Failed to load appointments', 'error');
+        noAppointments.style.display = 'block';
+    } finally {
+        loader.style.display = 'none';
+    }
+}
+
+// Update appointment stats
+function updateAppointmentStats(stats) {
+    document.getElementById('totalAppointments').textContent = stats?.total || 0;
+    document.getElementById('pendingAppointments').textContent = stats?.pending || 0;
+    document.getElementById('confirmedAppointments').textContent = stats?.confirmed || 0;
+    document.getElementById('completedAppointments').textContent = stats?.completed || 0;
+}
+
+// Create appointment card
+function createAppointmentCard(appointment) {
+    const card = document.createElement('div');
+    card.className = 'appointment-card';
+    
+    const statusClass = `status-${appointment.status}`;
+    const date = new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    card.innerHTML = `
+        <div class="appointment-header">
+            <div class="appointment-patient">
+                <div class="patient-name">
+                    <i class="fas fa-user-circle"></i>
+                    ${appointment.user?.name || 'Unknown'}
+                </div>
+                <div class="patient-email">${appointment.user?.email || ''}</div>
+            </div>
+            <span class="appointment-status ${statusClass}">${appointment.status}</span>
+        </div>
+        
+        <div class="appointment-details">
+            <div class="detail-row">
+                <i class="fas fa-user-md"></i>
+                <span class="detail-label">Doctor:</span>
+                <span class="detail-value">${appointment.doctorName} - ${appointment.doctorSpecialty}</span>
+            </div>
+            <div class="detail-row">
+                <i class="fas fa-calendar"></i>
+                <span class="detail-label">Date:</span>
+                <span class="detail-value">${date}</span>
+            </div>
+            <div class="detail-row">
+                <i class="fas fa-clock"></i>
+                <span class="detail-label">Time:</span>
+                <span class="detail-value">${appointment.appointmentTime}</span>
+            </div>
+            <div class="detail-row">
+                <i class="fas fa-video"></i>
+                <span class="detail-label">Type:</span>
+                <span class="detail-value">${appointment.consultationType}</span>
+            </div>
+            ${appointment.user?.phone ? `
+            <div class="detail-row">
+                <i class="fas fa-phone"></i>
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">${appointment.user.phone}</span>
+            </div>
+            ` : ''}
+        </div>
+        
+        <div class="appointment-symptoms">
+            <div class="symptoms-label"><i class="fas fa-notes-medical"></i> Symptoms</div>
+            <div class="symptoms-text">${appointment.symptoms}</div>
+        </div>
+        
+        ${appointment.additionalNotes ? `
+        <div class="appointment-symptoms" style="background: rgba(59, 130, 246, 0.1); border-left-color: var(--info-color);">
+            <div class="symptoms-label" style="color: var(--info-color);"><i class="fas fa-comment"></i> Additional Notes</div>
+            <div class="symptoms-text">${appointment.additionalNotes}</div>
+        </div>
+        ` : ''}
+        
+        <div class="appointment-actions">
+            <button class="action-btn view-btn" onclick="viewAppointmentDetails('${appointment._id}')">
+                <i class="fas fa-eye"></i> View
+            </button>
+            ${appointment.status === 'pending' ? `
+                <button class="action-btn confirm-btn" onclick="quickUpdateStatus('${appointment._id}', 'confirmed')">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+                <button class="action-btn reject-btn" onclick="quickUpdateStatus('${appointment._id}', 'rejected')">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+            ` : appointment.status === 'confirmed' ? `
+                <button class="action-btn complete-btn" onclick="quickUpdateStatus('${appointment._id}', 'completed')">
+                    <i class="fas fa-check-double"></i> Complete
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    return card;
+}
+
+// View appointment details in modal
+async function viewAppointmentDetails(appointmentId) {
+    currentAppointmentId = appointmentId;
+    
+    try {
+        const endpoint = API_CONFIG.ENDPOINTS.APPOINTMENT_BY_ID.replace(':id', appointmentId);
+        const appointment = await makeAPICall(endpoint, {
+            method: 'GET'
+        });
+        
+        const modal = document.getElementById('appointmentModal');
+        const detailsDiv = document.getElementById('appointmentDetails');
+        
+        const date = new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        detailsDiv.innerHTML = `
+            <div class="appointment-details">
+                <h3><i class="fas fa-user-circle"></i> Patient Information</h3>
+                <div class="detail-row">
+                    <i class="fas fa-user"></i>
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">${appointment.user?.name || 'Unknown'}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-envelope"></i>
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">${appointment.user?.email || ''}</span>
+                </div>
+                ${appointment.user?.phone ? `
+                <div class="detail-row">
+                    <i class="fas fa-phone"></i>
+                    <span class="detail-label">Phone:</span>
+                    <span class="detail-value">${appointment.user.phone}</span>
+                </div>
+                ` : ''}
+                ${appointment.user?.age ? `
+                <div class="detail-row">
+                    <i class="fas fa-birthday-cake"></i>
+                    <span class="detail-label">Age:</span>
+                    <span class="detail-value">${appointment.user.age} years</span>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="appointment-details" style="margin-top: 20px;">
+                <h3><i class="fas fa-calendar-check"></i> Appointment Details</h3>
+                <div class="detail-row">
+                    <i class="fas fa-user-md"></i>
+                    <span class="detail-label">Doctor:</span>
+                    <span class="detail-value">${appointment.doctorName}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-stethoscope"></i>
+                    <span class="detail-label">Specialty:</span>
+                    <span class="detail-value">${appointment.doctorSpecialty}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-calendar"></i>
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">${date}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-clock"></i>
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value">${appointment.appointmentTime}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-video"></i>
+                    <span class="detail-label">Consultation Type:</span>
+                    <span class="detail-value">${appointment.consultationType}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span class="detail-label">Duration:</span>
+                    <span class="detail-value">${appointment.duration || 30} minutes</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fas fa-flag"></i>
+                    <span class="detail-label">Priority:</span>
+                    <span class="detail-value">${appointment.priority || 'medium'}</span>
+                </div>
+            </div>
+            
+            <div class="appointment-symptoms" style="margin-top: 20px;">
+                <div class="symptoms-label"><i class="fas fa-notes-medical"></i> Symptoms</div>
+                <div class="symptoms-text">${appointment.symptoms}</div>
+            </div>
+            
+            ${appointment.additionalNotes ? `
+            <div class="appointment-symptoms" style="background: rgba(59, 130, 246, 0.1); border-left-color: var(--info-color); margin-top: 15px;">
+                <div class="symptoms-label" style="color: var(--info-color);"><i class="fas fa-comment"></i> Additional Notes</div>
+                <div class="symptoms-text">${appointment.additionalNotes}</div>
+            </div>
+            ` : ''}
+            
+            ${appointment.adminNotes ? `
+            <div class="appointment-symptoms" style="background: rgba(139, 92, 246, 0.1); border-left-color: var(--primary-color); margin-top: 15px;">
+                <div class="symptoms-label" style="color: var(--primary-color);"><i class="fas fa-clipboard"></i> Admin Notes</div>
+                <div class="symptoms-text">${appointment.adminNotes}</div>
+            </div>
+            ` : ''}
+            
+            ${appointment.meetingLink ? `
+            <div class="detail-row" style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                <i class="fas fa-link"></i>
+                <span class="detail-label">Meeting Link:</span>
+                <a href="${appointment.meetingLink}" target="_blank" class="detail-value" style="color: var(--success-color);">
+                    ${appointment.meetingLink}
+                </a>
+            </div>
+            ` : ''}
+        `;
+        
+        // Pre-fill inputs
+        document.getElementById('meetingLinkInput').value = appointment.meetingLink || '';
+        document.getElementById('adminNotesInput').value = appointment.adminNotes || '';
+        
+        modal.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading appointment details:', error);
+        showNotification('Failed to load appointment details', 'error');
+    }
+}
+
+// Close appointment modal
+function closeAppointmentModal() {
+    const modal = document.getElementById('appointmentModal');
+    modal.style.display = 'none';
+    currentAppointmentId = null;
+}
+
+// Quick update appointment status from card
+async function quickUpdateStatus(appointmentId, status) {
+    if (!confirm(`Are you sure you want to ${status} this appointment?`)) {
+        return;
+    }
+    
+    try {
+        const endpoint = API_CONFIG.ENDPOINTS.UPDATE_APPOINTMENT_STATUS.replace(':id', appointmentId);
+        await makeAPICall(endpoint, {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+        });
+        
+        showNotification(`Appointment ${status} successfully`, 'success');
+        loadAllAppointments(); // Reload the list
+        
+    } catch (error) {
+        console.error('Error updating appointment status:', error);
+        showNotification('Failed to update appointment status', 'error');
+    }
+}
+
+// Update appointment status from modal
+async function updateAppointmentStatus(status) {
+    if (!currentAppointmentId) return;
+    
+    await quickUpdateStatus(currentAppointmentId, status);
+    closeAppointmentModal();
+}
+
+// Save meeting link
+async function saveMeetingLink() {
+    if (!currentAppointmentId) return;
+    
+    const meetingLink = document.getElementById('meetingLinkInput').value.trim();
+    
+    if (!meetingLink) {
+        showNotification('Please enter a meeting link', 'warning');
+        return;
+    }
+    
+    try {
+        const endpoint = API_CONFIG.ENDPOINTS.UPDATE_APPOINTMENT_STATUS.replace(':id', currentAppointmentId);
+        await makeAPICall(endpoint, {
+            method: 'PATCH',
+            body: JSON.stringify({ meetingLink })
+        });
+        
+        showNotification('Meeting link saved successfully', 'success');
+        viewAppointmentDetails(currentAppointmentId); // Refresh details
+        
+    } catch (error) {
+        console.error('Error saving meeting link:', error);
+        showNotification('Failed to save meeting link', 'error');
+    }
+}
+
+// Save admin notes
+async function saveAdminNotes() {
+    if (!currentAppointmentId) return;
+    
+    const adminNotes = document.getElementById('adminNotesInput').value.trim();
+    
+    if (!adminNotes) {
+        showNotification('Please enter admin notes', 'warning');
+        return;
+    }
+    
+    try {
+        const endpoint = API_CONFIG.ENDPOINTS.UPDATE_APPOINTMENT_STATUS.replace(':id', currentAppointmentId);
+        await makeAPICall(endpoint, {
+            method: 'PATCH',
+            body: JSON.stringify({ adminNotes })
+        });
+        
+        showNotification('Admin notes saved successfully', 'success');
+        viewAppointmentDetails(currentAppointmentId); // Refresh details
+        
+    } catch (error) {
+        console.error('Error saving admin notes:', error);
+        showNotification('Failed to save admin notes', 'error');
+    }
+}
+
+// Filter appointments
+function filterAppointments() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const doctorFilter = document.getElementById('doctorFilter').value.toLowerCase();
+    
+    let filtered = [...allAppointmentsData];
+    
+    if (statusFilter) {
+        filtered = filtered.filter(apt => apt.status === statusFilter);
+    }
+    
+    if (dateFilter) {
+        filtered = filtered.filter(apt => {
+            const aptDate = new Date(apt.appointmentDate).toISOString().split('T')[0];
+            return aptDate === dateFilter;
+        });
+    }
+    
+    if (doctorFilter) {
+        filtered = filtered.filter(apt => 
+            apt.doctorName.toLowerCase().includes(doctorFilter) ||
+            apt.doctorSpecialty.toLowerCase().includes(doctorFilter)
+        );
+    }
+    
+    // Display filtered results
+    const grid = document.getElementById('appointmentsGrid');
+    const noAppointments = document.getElementById('noAppointments');
+    
+    grid.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        noAppointments.style.display = 'block';
+    } else {
+        noAppointments.style.display = 'none';
+        filtered.forEach(appointment => {
+            grid.appendChild(createAppointmentCard(appointment));
+        });
+    }
+}
+
+// Clear filters
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('doctorFilter').value = '';
+    loadAllAppointments();
+}
+
+// Load appointments when section is viewed
+document.addEventListener('DOMContentLoaded', function() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            if (section === 'appointments') {
+                loadAllAppointments();
+            }
+        });
+    });
+});
+
 console.log('CureMind Admin Dashboard initialized successfully');
+
