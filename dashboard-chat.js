@@ -101,7 +101,7 @@ Use when symptoms suggest immediate medical attention is needed:
 
 Response must include:
 - Title: "🚨 SEEK IMMEDIATE MEDICAL ATTENTION"
-- Actions: Call 911, go to ER, do not drive yourself, etc.
+- Actions: Call 108, go to ER, do not drive yourself, etc.
 
 👨‍⚕️ DOCTOR VISIT (severity: "doctor")
 Use when symptoms warrant professional evaluation but are not immediately life-threatening:

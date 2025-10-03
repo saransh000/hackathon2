@@ -233,7 +233,7 @@ function getRecommendations(severity, conditions) {
                 title: '🚨 SEEK IMMEDIATE MEDICAL ATTENTION',
                 type: 'emergency',
                 actions: [
-                    'Call 911 or go to the nearest emergency room immediately',
+                    'Call 108 or go to the nearest emergency room immediately',
                     'Do not drive yourself - call an ambulance',
                     'If possible, have someone stay with you',
                     'Bring a list of current medications'
