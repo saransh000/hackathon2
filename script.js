@@ -142,7 +142,14 @@ document.head.appendChild(style);
 // Check for remembered user on page load
 window.addEventListener('load', () => {
     const rememberedUser = localStorage.getItem('rememberedUser');
-    if (rememberedUser) {
+    const newUsername = localStorage.getItem('newUsername');
+    
+    // If user just registered, auto-fill their username
+    if (newUsername) {
+        document.getElementById('username').value = newUsername;
+        localStorage.removeItem('newUsername');
+        showNotification('Account created! Please login with your credentials.', 'success');
+    } else if (rememberedUser) {
         document.getElementById('username').value = rememberedUser;
         document.getElementById('remember').checked = true;
     }

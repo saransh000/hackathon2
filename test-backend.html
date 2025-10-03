@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Test - CureMind</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-section h2 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            border-left: 4px solid #4ade80;
+        }
+
+        .error {
+            border-left: 4px solid #f87171;
+        }
+
+        .info {
+            border-left: 4px solid #60a5fa;
+        }
+
+        .credentials {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .credentials h3 {
+            margin-bottom: 10px;
+        }
+
+        .credentials p {
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 CureMind Backend Diagnostic Tool</h1>
+
+        <div class="credentials">
+            <h3>📋 Default Credentials:</h3>
+            <p><strong>Admin:</strong> username: <code>admin</code> | password: <code>admin123</code></p>
+            <p><strong>User 1:</strong> username: <code>john_doe</code> | password: <code>password123</code></p>
+            <p><strong>User 2:</strong> username: <code>jane_smith</code> | password: <code>password123</code></p>
+        </div>
+
+        <div class="test-section">
+            <h2>1. Backend Health Check</h2>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <div id="health-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Test Admin Login</h2>
+            <button onclick="testAdminLogin()">Login as Admin</button>
+            <div id="admin-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Test User Login</h2>
+            <button onclick="testUserLogin()">Login as john_doe</button>
+            <div id="user-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Register New User</h2>
+            <button onclick="testRegister()">Register Test User</button>
+            <div id="register-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. Check Local Storage</h2>
+            <button onclick="checkLocalStorage()">Check Stored Data</button>
+            <button onclick="clearLocalStorage()">Clear Storage</button>
+            <div id="storage-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = content;
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult('health-result', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                showResult('health-result', `Error: ${error.message}\n\nMake sure backend is running on port 5000`, 'error');
+            }
+        }
+
+        async function testAdminLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('admin-result', 
+                        `✅ SUCCESS!\n\n` +
+                        `Status: ${response.status}\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                    
+                    // Store token for testing
+                    if (data.data && data.data.token) {
+                        localStorage.setItem('testToken', data.data.token);
+                    }
+                } else {
+                    showResult('admin-result', 
+                        `❌ FAILED\n\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.message}\n\n` +
+                        `Full Response:\n${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('admin-result', `❌ Network Error:\n${error.message}`, 'error');
+            }
+        }
+
+        async function testUserLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'john_doe',
+                        password: 'password123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('user-result', 
+                        `✅ SUCCESS!\n\n` +
+                        `Status: ${response.status}\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    showResult('user-result', 
+                        `❌ FAILED\n\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.message}\n\n` +
+                        `Full Response:\n${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('user-result', `❌ Network Error:\n${error.message}`, 'error');
+            }
+        }
+
+        async function testRegister() {
+            const testUsername = 'test_user_' + Date.now();
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: testUsername,
+                        password: 'test123',
+                        email: `${testUsername}@test.com`,
+                        firstName: 'Test',
+                        lastName: 'User'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('register-result', 
+                        `✅ SUCCESS! User created:\n` +
+                        `Username: ${testUsername}\n` +
+                        `Password: test123\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    showResult('register-result', 
+                        `❌ FAILED\n\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.message}\n\n` +
+                        `Full Response:\n${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                showResult('register-result', `❌ Network Error:\n${error.message}`, 'error');
+            }
+        }
+
+        function checkLocalStorage() {
+            const storage = {
+                authToken: localStorage.getItem('authToken'),
+                userRole: localStorage.getItem('userRole'),
+                username: localStorage.getItem('username'),
+                userId: localStorage.getItem('userId'),
+                userData: localStorage.getItem('userData'),
+                rememberedUser: localStorage.getItem('rememberedUser')
+            };
+
+            showResult('storage-result', 
+                `📦 Local Storage Contents:\n\n${JSON.stringify(storage, null, 2)}`, 
+                'info');
+        }
+
+        function clearLocalStorage() {
+            localStorage.clear();
+            showResult('storage-result', 
+                `✅ Local storage cleared!\n\nYou can now try logging in again with fresh credentials.`, 
+                'success');
+        }
+    </script>
+</body>
+</html>
