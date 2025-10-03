@@ -281,14 +281,15 @@ function addLanguageSelector() {
     const select = document.createElement('select');
     select.id = 'languageSelector';
     select.style.cssText = `
-        padding: 0.5rem;
-        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 0.75rem;
+        background: rgba(30, 27, 62, 0.9);
         color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(139, 92, 246, 0.4);
         border-radius: 6px;
         cursor: pointer;
         font-size: 0.9rem;
         font-weight: 600;
+        outline: none;
     `;
     
     // Add language options
@@ -297,6 +298,11 @@ function addLanguageSelector() {
         const option = document.createElement('option');
         option.value = code;
         option.textContent = name;
+        option.style.cssText = `
+            background: #1e1b3e;
+            color: white;
+            padding: 0.5rem;
+        `;
         if (code === 'en-US') option.selected = true;
         select.appendChild(option);
     }
