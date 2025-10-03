@@ -135,6 +135,18 @@ function setupEventListeners() {
         }, 1000);
     });
 
+    // My Profile button
+    document.getElementById('myProfileBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        showProfileModal();
+    });
+
+    // Settings button
+    document.getElementById('settingsBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        showSettingsModal();
+    });
+
     // Clear button (only if it exists - for old textarea interface)
     const clearBtn = document.getElementById('clearBtn');
     if (clearBtn) {
@@ -1294,3 +1306,296 @@ function showSamplePharmacies() {
 }
 
 console.log('Pharmacy finder module loaded successfully (OpenStreetMap)');
+
+// Profile Modal Function
+function showProfileModal() {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'profileModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: rgba(30, 27, 62, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        ">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <i class="fas fa-user-circle" style="font-size: 80px; color: #8b5cf6; margin-bottom: 15px;"></i>
+                <h2 style="color: white; margin-bottom: 10px; font-size: 28px;">My Profile</h2>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 16px;">Your personal information</p>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 25px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; color: white;">
+                    <div style="font-weight: 600; color: rgba(255, 255, 255, 0.7);">Name:</div>
+                    <div id="profileName">${userData.name || 'N/A'}</div>
+                    
+                    <div style="font-weight: 600; color: rgba(255, 255, 255, 0.7);">Username:</div>
+                    <div id="profileUsername">${userData.username || 'N/A'}</div>
+                    
+                    <div style="font-weight: 600; color: rgba(255, 255, 255, 0.7);">Email:</div>
+                    <div id="profileEmail">${userData.email || 'N/A'}</div>
+                    
+                    <div style="font-weight: 600; color: rgba(255, 255, 255, 0.7);">Age:</div>
+                    <div id="profileAge">${userData.age || 'N/A'}</div>
+                    
+                    <div style="font-weight: 600; color: rgba(255, 255, 255, 0.7);">Gender:</div>
+                    <div id="profileGender">${userData.gender || 'N/A'}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <button onclick="editProfile()" style="
+                    flex: 1;
+                    padding: 15px;
+                    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+                    border: none;
+                    border-radius: 12px;
+                    color: white;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 20px rgba(139, 92, 246, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </button>
+                <button onclick="closeProfileModal()" style="
+                    flex: 1;
+                    padding: 15px;
+                    background: transparent;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 12px;
+                    color: rgba(255, 255, 255, 0.8);
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.5)';" onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255, 255, 255, 0.3)';">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+function editProfile() {
+    closeProfileModal();
+    showNotification('Profile editing feature coming soon!', 'info');
+}
+
+// Settings Modal Function
+function showSettingsModal() {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'settingsModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: rgba(30, 27, 62, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        ">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <i class="fas fa-cog" style="font-size: 80px; color: #8b5cf6; margin-bottom: 15px;"></i>
+                <h2 style="color: white; margin-bottom: 10px; font-size: 28px;">Settings</h2>
+                <p style="color: rgba(255, 255, 255, 0.7); font-size: 16px;">Customize your experience</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Notifications -->
+                <div style="
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 15px;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <div>
+                        <div style="color: white; font-weight: 600; margin-bottom: 5px;">
+                            <i class="fas fa-bell"></i> Notifications
+                        </div>
+                        <div style="color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+                            Receive health reminders and updates
+                        </div>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 60px; height: 34px;">
+                        <input type="checkbox" id="notificationsToggle" checked style="opacity: 0; width: 0; height: 0;">
+                        <span style="
+                            position: absolute;
+                            cursor: pointer;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background-color: #8b5cf6;
+                            transition: 0.4s;
+                            border-radius: 34px;
+                        " onclick="this.parentElement.querySelector('input').click()"></span>
+                    </label>
+                </div>
+
+                <!-- Dark Mode -->
+                <div style="
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 15px;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <div>
+                        <div style="color: white; font-weight: 600; margin-bottom: 5px;">
+                            <i class="fas fa-moon"></i> Dark Mode
+                        </div>
+                        <div style="color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+                            Currently enabled
+                        </div>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 60px; height: 34px;">
+                        <input type="checkbox" id="darkModeToggle" checked style="opacity: 0; width: 0; height: 0;">
+                        <span style="
+                            position: absolute;
+                            cursor: pointer;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background-color: #8b5cf6;
+                            transition: 0.4s;
+                            border-radius: 34px;
+                        " onclick="this.parentElement.querySelector('input').click()"></span>
+                    </label>
+                </div>
+
+                <!-- Privacy -->
+                <div style="
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 15px;
+                    padding: 20px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                    <div style="color: white; font-weight: 600; margin-bottom: 5px;">
+                        <i class="fas fa-lock"></i> Privacy & Security
+                    </div>
+                    <div style="color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+                        Manage your data and security settings
+                    </div>
+                </div>
+
+                <!-- Language -->
+                <div style="
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 15px;
+                    padding: 20px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                    <div style="color: white; font-weight: 600; margin-bottom: 5px;">
+                        <i class="fas fa-language"></i> Language
+                    </div>
+                    <div style="color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+                        English (US)
+                    </div>
+                </div>
+
+                <!-- Help & Support -->
+                <div style="
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 15px;
+                    padding: 20px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                    <div style="color: white; font-weight: 600; margin-bottom: 5px;">
+                        <i class="fas fa-question-circle"></i> Help & Support
+                    </div>
+                    <div style="color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+                        Get help and contact support
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="closeSettingsModal()" style="
+                width: 100%;
+                margin-top: 25px;
+                padding: 15px;
+                background: transparent;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 12px;
+                color: rgba(255, 255, 255, 0.8);
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.borderColor='rgba(255, 255, 255, 0.5)';" onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255, 255, 255, 0.3)';">
+                Close
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
