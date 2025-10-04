@@ -326,7 +326,7 @@ async function getGeminiResponse(userMessage) {
                     temperature: 0.7,
                     topK: 40,
                     topP: 0.95,
-                    maxOutputTokens: 250,
+                    maxOutputTokens: 500,
                 },
                 safetySettings: [
                     {
@@ -359,10 +359,29 @@ async function getGeminiResponse(userMessage) {
         console.log('Gemini Response:', data); // Debug log
         console.log('Candidates:', data.candidates); // Debug candidates
         
-        // Check for blocked content
-        if (data.candidates && data.candidates[0]?.finishReason === 'SAFETY') {
-            console.error('Content blocked by safety filters:', data);
-            throw new Error('Response blocked by safety filters. Please rephrase your symptoms.');
+        // Check for blocked content or max tokens
+        if (data.candidates && data.candidates.length > 0) {
+            const candidate = data.candidates[0];
+            
+            // Handle MAX_TOKENS finish reason
+            if (candidate.finishReason === 'MAX_TOKENS') {
+                console.warn('Response truncated due to MAX_TOKENS');
+                // Try to extract any partial content
+                if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                    const partialText = candidate.content.parts[0].text;
+                    if (partialText && partialText.trim()) {
+                        return partialText;
+                    }
+                }
+                // If no content, ask user to continue
+                throw new Error('Response was too long. Please continue with your symptoms.');
+            }
+            
+            // Handle SAFETY blocks
+            if (candidate.finishReason === 'SAFETY') {
+                console.error('Content blocked by safety filters:', data);
+                throw new Error('Response blocked by safety filters. Please rephrase your symptoms.');
+            }
         }
         
         // Check for various response structures
@@ -376,18 +395,34 @@ async function getGeminiResponse(userMessage) {
             let aiText = null;
             
             if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-                aiText = candidate.content.parts[0].text;
-                console.log('✅ Found text in standard structure:', aiText);
+                const part = candidate.content.parts[0];
+                if (part && part.text) {
+                    aiText = part.text;
+                    console.log('✅ Found text in standard structure:', aiText);
+                }
             } else if (candidate.text) {
                 aiText = candidate.text;
                 console.log('✅ Found text in candidate.text:', aiText);
             } else if (candidate.output) {
                 aiText = candidate.output;
                 console.log('✅ Found text in candidate.output:', aiText);
-            } else {
-                console.error('❌ Could not find text in any known structure');
+            }
+            
+            // If no text found, check finish reason
+            if (!aiText || aiText.trim() === '') {
+                console.error('❌ No text content found');
+                console.error('Finish Reason:', candidate.finishReason);
                 console.error('Candidate keys:', Object.keys(candidate));
                 console.error('Full candidate:', JSON.stringify(candidate, null, 2));
+                
+                // Provide helpful error based on finish reason
+                if (candidate.finishReason === 'MAX_TOKENS') {
+                    throw new Error('The AI response was incomplete. Please continue describing your symptoms.');
+                } else if (candidate.finishReason === 'STOP') {
+                    throw new Error('The AI couldn\'t generate a proper response. Please try rephrasing your message.');
+                } else {
+                    throw new Error('No response content received. Please try again.');
+                }
             }
             
             if (aiText) {
