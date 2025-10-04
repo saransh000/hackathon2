@@ -73,9 +73,27 @@
                             placeholder="Type your symptoms here..."
                             rows="2"
                         ></textarea>
-                        <button class="send-btn" id="sendBtn" title="Send message">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
+                        <div class="input-controls">
+                            <button class="voice-btn" id="voiceBtn" title="Voice input">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <select class="language-selector" id="languageSelector">
+                                <option value="en-US">English</option>
+                                <option value="hi-IN">हिंदी (Hindi)</option>
+                                <option value="es-ES">Español (Spanish)</option>
+                                <option value="fr-FR">Français (French)</option>
+                                <option value="de-DE">Deutsch (German)</option>
+                                <option value="it-IT">Italiano (Italian)</option>
+                                <option value="pt-BR">Português (Portuguese)</option>
+                                <option value="zh-CN">中文 (Chinese)</option>
+                                <option value="ja-JP">日本語 (Japanese)</option>
+                                <option value="ko-KR">한국어 (Korean)</option>
+                                <option value="ar-SA">العربية (Arabic)</option>
+                            </select>
+                            <button class="send-btn" id="sendBtn" title="Send message">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -260,6 +278,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script src="api-config.js"></script>
+    <script src="voice-input.js"></script>
     <script src="dashboard.js"></script>
     <script src="dashboard-chat.js"></script>
 </body>

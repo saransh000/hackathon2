@@ -79,22 +79,21 @@ async function loadAdminOverview() {
 function updateMetrics(data) {
     // Update user metrics
     if (data.users) {
-        updateElement('totalUsers', data.users.total);
-        updateElement('activeUsers', data.users.active);
-        updateElement('newUsers', data.users.newThisMonth);
+        updateElement('activeUsers', data.users.active || 0);
+        updateElement('newSignups', data.users.newThisMonth || 0);
     }
     
     // Update analysis metrics
     if (data.analyses) {
-        updateElement('totalAnalyses', data.analyses.total);
-        updateElement('monthlyAnalyses', data.analyses.thisMonth);
-        updateElement('todayAnalyses', data.analyses.today);
+        updateElement('triageAnalyses', data.analyses.today || 0);
     }
     
-    // Update system metrics
-    if (data.system) {
-        updateElement('avgProcessingTime', data.system.averageProcessingTime + 'ms');
-        updateElement('uptime', formatUptime(data.system.uptime));
+    // Calculate emergency alerts from severity breakdown
+    if (data.analyses && data.analyses.severityBreakdown) {
+        const emergencyCount = data.analyses.severityBreakdown.emergency || 0;
+        updateElement('emergencyAlerts', emergencyCount);
+    } else {
+        updateElement('emergencyAlerts', 0);
     }
 }
 
@@ -365,17 +364,32 @@ function updateUserActivityChart(period) {
 }
 
 // Refresh Metrics
-function refreshMetrics() {
-    // Simulate data refresh with slight variations
-    const activeUsers = document.getElementById('activeUsers');
-    const newSignups = document.getElementById('newSignups');
-    const triageAnalyses = document.getElementById('triageAnalyses');
-    const emergencyAlerts = document.getElementById('emergencyAlerts');
-    
-    activeUsers.textContent = Math.floor(1200 + Math.random() * 100);
-    newSignups.textContent = Math.floor(140 + Math.random() * 20);
-    triageAnalyses.textContent = Math.floor(2800 + Math.random() * 100);
-    emergencyAlerts.textContent = Math.floor(30 + Math.random() * 10);
+async function refreshMetrics() {
+    // Fetch real data from backend
+    try {
+        const response = await makeAPICall(API_CONFIG.ENDPOINTS.ADMIN_OVERVIEW);
+        
+        if (response.success && response.data) {
+            const data = response.data;
+            
+            // Update with real data
+            if (data.users) {
+                updateElement('activeUsers', data.users.active || 0);
+                updateElement('newSignups', data.users.newToday || 0);
+            }
+            
+            if (data.analyses) {
+                updateElement('triageAnalyses', data.analyses.today || 0);
+            }
+            
+            if (data.emergencyAlerts !== undefined) {
+                updateElement('emergencyAlerts', data.emergencyAlerts || 0);
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing metrics:', error);
+        // Don't show random numbers, show current values or 0
+    }
     
     updateLastUpdatedTime();
 }
