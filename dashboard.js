@@ -636,6 +636,7 @@ document.getElementById('appointmentDate')?.addEventListener('change', async fun
     selectedDate = e.target.value;
     const doctor = document.getElementById('doctorSelect').value.split('|')[0];
     
+    
     if (!doctor) {
         showNotification('Please select a doctor first', 'info');
         return;
