@@ -481,10 +481,17 @@ body::before {
 
 .chat-input-container {
     display: flex;
+    flex-direction: column;
     gap: 1rem;
     padding: 1.5rem;
     background: rgba(255, 255, 255, 0.05);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
 }
 
 .chat-input {
@@ -512,6 +519,64 @@ body::before {
     background: rgba(255, 255, 255, 0.12);
     border-color: var(--accent-color);
     box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+}
+
+.voice-btn {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.voice-btn.listening {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    border-color: #f5576c;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.language-selector {
+    padding: 0.75rem 1rem;
+    background: rgba(30, 27, 62, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+}
+
+.language-selector:hover {
+    border-color: var(--accent-color);
+    background: rgba(30, 27, 62, 1);
+}
+
+.language-selector:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+}
+
+.language-selector option {
+    background: rgba(30, 27, 62, 1);
+    color: #ffffff;
+    padding: 0.5rem;
 }
 
 .send-btn {
