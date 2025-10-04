@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - CureMind</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="doctor-dashboard.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <h1 class="logo">CureMind</h1>
+            <span class="doctor-badge"><i class="fas fa-user-md"></i> Doctor Portal</span>
+        </div>
+        <div class="header-right">
+            <div class="doctor-info">
+                <i class="fas fa-stethoscope"></i>
+                <span id="doctorName">Dr. Doctor</span>
+                <span class="specialization" id="doctorSpec">General</span>
+            </div>
+            <button class="status-toggle" id="statusToggle" onclick="toggleAvailability()">
+                <i class="fas fa-circle"></i>
+                <span id="statusText">Available</span>
+            </button>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Stats Cards -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="activeCalls">0</h3>
+                    <p>Active Consultations</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="waitingPatients">0</h3>
+                    <p>Patients Waiting</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="todayAppointments">0</h3>
+                    <p>Today's Appointments</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalMinutes">0</h3>
+                    <p>Total Consultation Minutes</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Patient Queue Section -->
+        <section class="queue-section">
+            <div class="section-header">
+                <h2><i class="fas fa-users"></i> Patient Queue</h2>
+                <button class="refresh-btn" onclick="refreshQueue()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+
+            <div class="queue-container" id="queueContainer">
+                <!-- Patients will be dynamically added here -->
+                <div class="empty-state">
+                    <i class="fas fa-user-clock"></i>
+                    <p>No patients in queue</p>
+                    <small>Patients requesting consultations will appear here</small>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upcoming Appointments -->
+        <section class="appointments-section">
+            <div class="section-header">
+                <h2><i class="fas fa-calendar-alt"></i> Today's Appointments</h2>
+                <button class="view-all-btn" onclick="viewAllAppointments()">
+                    View All
+                </button>
+            </div>
+
+            <div class="appointments-container" id="appointmentsContainer">
+                <!-- Appointments will be dynamically added here -->
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No appointments scheduled for today</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Consultations -->
+        <section class="history-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Recent Consultations</h2>
+            </div>
+
+            <div class="history-container" id="historyContainer">
+                <!-- History will be dynamically added here -->
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No consultation history</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Consultation Request Modal -->
+    <div class="modal" id="consultationModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-video"></i> New Consultation Request</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Patient details will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-decline" onclick="declineConsultation()">
+                    <i class="fas fa-times"></i> Decline
+                </button>
+                <button class="btn-accept" onclick="acceptConsultation()">
+                    <i class="fas fa-video"></i> Start Video Call
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="doctor-dashboard.js"></script>
+</body>
+</html>

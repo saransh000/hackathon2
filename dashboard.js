@@ -6,6 +6,9 @@ let userData = {
     gender: 'Male'
 };
 
+// Debug: Test if script loads
+console.log('✅ Dashboard.js loaded successfully');
+
 // Session Protection - Check if user is logged in
 function checkSession() {
     const userRole = localStorage.getItem('userRole');
@@ -890,24 +893,26 @@ function openPharmacyFinder() {
     
     if (!modal) {
         console.error('❌ Pharmacy modal not found!');
-        showNotification('Error: Pharmacy modal not found. Please refresh the page.', 'error');
+        alert('Error: Pharmacy modal not found in the page!');
         return;
     }
     
     console.log('✅ Modal found, displaying...');
     modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
     
     // Check if Leaflet is loaded
     if (!window.L) {
         console.log('⏳ Leaflet not loaded yet, waiting...');
-        showNotification('Map is loading... Please wait a moment.', 'info');
+        alert('Map library is loading... Please wait a moment and try again.');
         setTimeout(() => {
             if (window.L) {
                 console.log('✅ Leaflet loaded, initializing map...');
                 initPharmacyMap();
             } else {
                 console.error('❌ Leaflet failed to load');
-                showNotification('Map library failed to load. Please refresh the page.', 'error');
+                alert('Map library failed to load. Please refresh the page.');
             }
         }, 1500);
         return;
@@ -922,6 +927,12 @@ function openPharmacyFinder() {
         pharmacyMap.invalidateSize();
     }
 }
+
+// Make it globally available immediately
+window.openPharmacyFinder = openPharmacyFinder;
+
+// Make openPharmacyFinder globally accessible
+window.openPharmacyFinder = openPharmacyFinder;
 
 // Close Pharmacy Finder Modal
 document.getElementById('closePharmacyModal')?.addEventListener('click', function() {
@@ -1514,7 +1525,33 @@ function closeDoctorModal() {
 
 function startVideoCall() {
     closeDoctorModal();
-    showNotification('Starting video call...', 'info');
+    
+    // Create consultation request
+    const roomId = `consultation-${Date.now()}`;
+    const patientName = localStorage.getItem('username') || 'Patient';
+    const patientAge = 30; // Could be from profile
+    
+    // Get last analyzed symptoms or default
+    const symptoms = localStorage.getItem('lastSymptoms') || 'General consultation requested';
+    
+    // Add to consultation queue for doctors
+    let queue = localStorage.getItem('consultationQueue');
+    queue = queue ? JSON.parse(queue) : [];
+    
+    queue.push({
+        id: Date.now().toString(),
+        patientName: patientName,
+        age: patientAge,
+        symptoms: symptoms,
+        urgency: 'medium',
+        waitTime: '0 min',
+        roomId: roomId
+    });
+    
+    localStorage.setItem('consultationQueue', JSON.stringify(queue));
+    localStorage.setItem('currentConsultationRoom', roomId);
+    
+    showNotification('Connecting to doctor...', 'info');
     setTimeout(() => {
         window.location.href = 'video-call.html';
     }, 500);

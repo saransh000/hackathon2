@@ -150,14 +150,21 @@
             border: 1px solid rgba(139, 92, 246, 0.2);
             overflow: hidden;
             position: relative;
-            min-height: 600px;
+            min-height: 700px;
+            height: calc(100vh - 250px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
         #daily-call-frame {
             width: 100%;
             height: 100%;
+            min-height: 700px;
             border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         /* Loading State */
@@ -292,8 +299,8 @@
             </div>
             <iframe 
                 id="daily-call-frame"
-                allow="camera; microphone; fullscreen; display-capture; autoplay"
-                style="display: none;">
+                allow="camera; microphone; fullscreen; display-capture; autoplay; speaker"
+                style="display: block; width: 100%; height: 100%;">
             </iframe>
         </div>
 
@@ -316,16 +323,20 @@
 
     <script>
         // Get user info
-        const username = localStorage.getItem('username') || 'patient';
+        const username = localStorage.getItem('username') || localStorage.getItem('doctorName') || 'User';
         const userId = localStorage.getItem('userId') || Date.now();
+        const isDoctor = localStorage.getItem('isDoctor') === 'true';
         
-        // Generate unique room name
-        const roomName = `consultation-${userId}-${Date.now()}`;
+        // Using Jitsi Meet - 100% FREE, no signup, no payment required!
+        // Check if there's a shared room from consultation request
+        let roomName = localStorage.getItem('currentConsultationRoom');
         
-        // Daily.co configuration (using their demo domain - you'll need to sign up for your own)
-        const DAILY_DOMAIN = 'https://curemind.daily.co'; // Replace with your Daily.co domain
-        const roomUrl = `${DAILY_DOMAIN}/${roomName}`;
-
+        // If no shared room, create a new one
+        if (!roomName) {
+            roomName = `CureMind-Consultation-${Date.now()}`;
+            localStorage.setItem('currentConsultationRoom', roomName);
+        }
+        
         // Initialize call
         function initializeCall() {
             const frame = document.getElementById('daily-call-frame');
@@ -333,24 +344,24 @@
             const statusText = document.getElementById('status-text');
             const instructions = document.getElementById('instructions');
 
-            // For demo purposes, we'll use Daily.co's prebuilt UI
-            // You can create a room at: https://dashboard.daily.co
+            // Jitsi Meet - Completely free video conferencing!
+            // Works immediately, no API keys, no payment needed
             
-            // Create room URL with username
-            const callUrl = `https://curemind.daily.co/${roomName}?t=${encodeURIComponent(username)}`;
+            // Create room URL with Jitsi Meet public instance
+            const callUrl = `https://meet.jit.si/${roomName}#userInfo.displayName="${encodeURIComponent(username)}"&config.prejoinPageEnabled=false`;
             
             frame.src = callUrl;
             
-            // Show frame after short delay
+            // Hide loading immediately and show frame
+            loading.style.display = 'none';
+            frame.style.display = 'block';
+            statusText.textContent = 'Connected';
+            instructions.classList.add('show');
+            
+            // Show notification after a short delay
             setTimeout(() => {
-                loading.style.display = 'none';
-                frame.style.display = 'block';
-                statusText.textContent = 'Connected';
-                instructions.classList.add('show');
-                
-                // Show notification
                 showNotification('Video call started successfully!', 'success');
-            }, 2000);
+            }, 1500);
         }
 
         // End call

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Login - CureMind</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #0f0f23, #1a1a3e, #2d1b4e, #1e1b3e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .login-container {
+            background: rgba(30, 27, 62, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px 40px;
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo h1 {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+        }
+
+        .doctor-icon {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .doctor-icon i {
+            font-size: 80px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .doctor-icon h2 {
+            color: white;
+            margin-top: 15px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b5cf6;
+            font-size: 18px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-group select option {
+            background: #1e1b3e;
+            color: white;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .login-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: rgba(139, 92, 246, 0.3);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .quick-login {
+            text-align: center;
+        }
+
+        .demo-btn {
+            padding: 12px 25px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 2px solid rgba(139, 92, 246, 0.4);
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .demo-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .back-link a {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #ec4899;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 40px 25px;
+            }
+
+            .logo h1 {
+                font-size: 32px;
+            }
+
+            .doctor-icon i {
+                font-size: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>CureMind</h1>
+            <p>Doctor Portal</p>
+        </div>
+
+        <div class="doctor-icon">
+            <i class="fas fa-user-md"></i>
+            <h2>Welcome Back, Doctor</h2>
+        </div>
+
+        <form id="doctorLoginForm">
+            <div class="form-group">
+                <label for="doctorId">Doctor ID / Email</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-id-card"></i>
+                    <input type="text" id="doctorId" placeholder="Enter your doctor ID or email" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="specialization">Specialization</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-stethoscope"></i>
+                    <select id="specialization" required>
+                        <option value="">Select your specialization</option>
+                        <option value="general">General Physician</option>
+                        <option value="cardiology">Cardiology</option>
+                        <option value="neurology">Neurology</option>
+                        <option value="pediatrics">Pediatrics</option>
+                        <option value="orthopedics">Orthopedics</option>
+                        <option value="dermatology">Dermatology</option>
+                        <option value="psychiatry">Psychiatry</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+            </button>
+        </form>
+
+        <div class="divider">OR</div>
+
+        <div class="quick-login">
+            <button class="demo-btn" onclick="quickLogin('Dr. Sarah Johnson', 'cardiology')">
+                <i class="fas fa-heart"></i> Quick Login - Cardiologist
+            </button>
+            <button class="demo-btn" onclick="quickLogin('Dr. Michael Chen', 'general')">
+                <i class="fas fa-user-md"></i> Quick Login - General
+            </button>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Handle doctor login
+        document.getElementById('doctorLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const doctorId = document.getElementById('doctorId').value;
+            const password = document.getElementById('password').value;
+            const specialization = document.getElementById('specialization').value;
+            
+            // Store doctor info
+            localStorage.setItem('doctorId', doctorId);
+            localStorage.setItem('doctorName', doctorId);
+            localStorage.setItem('doctorSpecialization', specialization);
+            localStorage.setItem('isDoctor', 'true');
+            
+            // Redirect to doctor dashboard
+            window.location.href = 'doctor-dashboard.html';
+        });
+
+        // Quick login function
+        function quickLogin(name, specialization) {
+            localStorage.setItem('doctorId', name.toLowerCase().replace(/\s+/g, '.'));
+            localStorage.setItem('doctorName', name);
+            localStorage.setItem('doctorSpecialization', specialization);
+            localStorage.setItem('isDoctor', 'true');
+            
+            window.location.href = 'doctor-dashboard.html';
+        }
+    </script>
+</body>
+</html>
